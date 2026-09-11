@@ -208,11 +208,10 @@
       <summary>Buscador de lugares — configuración</summary>
       <p class="hint">Busco con OpenStreetMap (Photon + Nominatim). Encuentra calles y lugares conocidos,
         pero le faltan negocios pequeños. Si uno no aparece, usa <b>Marcar en el mapa</b>.</p>
-      <label for="proxyUrl">Proxy propio para "Actualizar precios ahora" (opcional)</label>
+      <label for="proxyUrl">Proxy alternativo (opcional)</label>
       <input type="text" id="proxyUrl" placeholder="https://tu-worker.workers.dev" autocomplete="off">
-      <p class="hint">Sin esto se usa un proxy público gratuito que se satura seguido.
-        En <code>worker/</code> del repositorio está el código y los pasos para desplegar
-        el tuyo en Cloudflare (gratis, 3 minutos).</p>
+      <p class="hint">Por defecto se usa el Worker de Cloudflare de este proyecto
+        (<code>worker/</code> en el repositorio). Solo cambia esto si quieres apuntar a otro.</p>
       <label for="gkey">API key de Google Maps (opcional, se guarda solo en este navegador)</label>
       <input type="password" id="gkey" placeholder="pégala aquí para buscar con Google" autocomplete="off">
       <p class="hint">Necesita la <i>Places API (New)</i> activada y facturación en tu cuenta de Google.
@@ -711,10 +710,11 @@
   // dejamos la app sin datos.
   // Proxy por defecto: gratuito y sin registro, pero se satura seguido con los
   // 259 KB de Lima. Si pegas la URL de un Worker propio en configuración, se usa ese.
-  var PROXY_PUBLICO = 'https://api.allorigins.win/raw?url=';
+  // Worker propio desplegado en Cloudflare (ver worker/). Estable y con cache de 5 min.
+  var PROXY_POR_DEFECTO = 'https://grifos-lima-proxy.grifos-lima-yufagb.workers.dev/?url=';
   function proxy(){
     var propio = ($('proxyUrl').value || '').trim();
-    return propio ? (propio.replace(/\/+$/, '') + '/?url=') : PROXY_PUBLICO;
+    return propio ? (propio.replace(/\/+$/, '') + '/?url=') : PROXY_POR_DEFECTO;
   }
   var PROVINCIAS = [
     { dep: '150000', prov: '150100' },
@@ -810,8 +810,7 @@
         est.innerHTML = 'No pude actualizar: ' + err.message + '. ' +
           (propio
             ? 'Revisa que la URL de tu proxy sea correcta y que permita este origen.'
-            : 'Es el proxy público, que se satura seguido; reintenta o configura uno propio ' +
-              '(ver <code>worker/</code> en el repositorio).') +
+            : 'Reintenta en un momento; si persiste, revisa el Worker en Cloudflare.') +
           ' Mientras, sigues viendo los precios del ' + window.FECHA +
           ', que se refrescan solos cada 3 horas.';
       })
