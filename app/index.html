@@ -105,6 +105,10 @@
   <aside class="side">
     <h1>Grifos Lima y Callao — Primax vs Repsol</h1>
     <p class="sub" id="meta"></p>
+    <button class="mini" id="btnVivo" style="width:100%;margin-bottom:10px">
+      Actualizar precios ahora
+    </button>
+    <p class="hint" id="vivoEstado" hidden></p>
 
     <fieldset>
       <legend>Mis descuentos (S/ por galón)</legend>
@@ -204,6 +208,11 @@
       <summary>Buscador de lugares — configuración</summary>
       <p class="hint">Busco con OpenStreetMap (Photon + Nominatim). Encuentra calles y lugares conocidos,
         pero le faltan negocios pequeños. Si uno no aparece, usa <b>Marcar en el mapa</b>.</p>
+      <label for="proxyUrl">Proxy propio para "Actualizar precios ahora" (opcional)</label>
+      <input type="text" id="proxyUrl" placeholder="https://tu-worker.workers.dev" autocomplete="off">
+      <p class="hint">Sin esto se usa un proxy público gratuito que se satura seguido.
+        En <code>worker/</code> del repositorio está el código y los pasos para desplegar
+        el tuyo en Cloudflare (gratis, 3 minutos).</p>
       <label for="gkey">API key de Google Maps (opcional, se guarda solo en este navegador)</label>
       <input type="password" id="gkey" placeholder="pégala aquí para buscar con Google" autocomplete="off">
       <p class="hint">Necesita la <i>Places API (New)</i> activada y facturación en tu cuenta de Google.
@@ -351,6 +360,8 @@
   var LIMA = {lat:-12.06, lon:-77.04};
   try { if (localStorage.getItem('gkey')) $('gkey').value = localStorage.getItem('gkey'); } catch(e){}
   $('gkey').oninput = function(){ try{ localStorage.setItem('gkey', this.value.trim()); }catch(e){} };
+  try { if (localStorage.getItem('proxyUrl')) $('proxyUrl').value = localStorage.getItem('proxyUrl'); } catch(e){}
+  $('proxyUrl').oninput = function(){ try{ localStorage.setItem('proxyUrl', this.value.trim()); }catch(e){} };
 
   function buscarGoogle(q){
     var key = $('gkey').value.trim();
@@ -693,7 +704,124 @@
     .finally(function(){ $('btnRuta').disabled=false; $('btnRuta').textContent='Buscar grifos en la ruta'; });
   }
 
+  // ---------------- actualizar precios en vivo ----------------
+  // Facilito no manda cabeceras CORS, asi que el navegador no puede consultarlo
+  // directo desde github.io. Pasamos por un proxy publico que las agrega.
+  // Si el proxy falla, nos quedamos con los precios del ultimo build; nunca
+  // dejamos la app sin datos.
+  // Proxy por defecto: gratuito y sin registro, pero se satura seguido con los
+  // 259 KB de Lima. Si pegas la URL de un Worker propio en configuración, se usa ese.
+  var PROXY_PUBLICO = 'https://api.allorigins.win/raw?url=';
+  function proxy(){
+    var propio = ($('proxyUrl').value || '').trim();
+    return propio ? (propio.replace(/\/+$/, '') + '/?url=') : PROXY_PUBLICO;
+  }
+  var PROVINCIAS = [
+    { dep: '150000', prov: '150100' },
+    { dep: '70000',  prov: '70100'  }
+  ];
+
+  function urlFacilito(p){
+    return 'https://www.facilito.gob.pe/facilito/actions/MapaAction.do' +
+      '?departamento=' + p.dep + '&provincia=' + p.prov +
+      '&distrito=9999999&producto=127&method=mostrarMapa' +
+      '&subtitulocabecera=1&tipo=LIQ&codigoOSI=0';
+  }
+
+  function extraerPuntos(html){
+    var i = html.indexOf('listaPuntos');
+    if (i < 0) throw new Error('Facilito cambió su página');
+    var a = html.indexOf('[{', i);
+    // cortar en el cierre del eval, no en el primer "}]" (ese cierra "productos")
+    var e = html.indexOf("+ ')'", a);
+    if (a < 0 || e < 0) throw new Error('no pude leer los datos');
+    return JSON.parse(html.slice(a, e).trim().replace(/'\s*$/, '').trim());
+  }
+
+  function precioDe(p, re){
+    var x = p.productos.find(function(y){ return re.test(y.producto); });
+    return x && x.precioVenta != null ? x.precioVenta : null;
+  }
+
+  function bajarProvincia(p, intento){
+    intento = intento || 1;
+    return fetch(proxy() + encodeURIComponent(urlFacilito(p)))
+      .then(function(r){
+        if (!r.ok) throw new Error('el proxy respondió ' + r.status);
+        return r.arrayBuffer();
+      })
+      .then(function(buf){
+        return extraerPuntos(new TextDecoder('windows-1252').decode(buf));
+      })
+      .catch(function(err){
+        // el proxy gratuito se satura seguido; un reintento suele bastar
+        if (intento >= 3) throw err;
+        return new Promise(function(res){ setTimeout(res, 1500 * intento); })
+          .then(function(){ return bajarProvincia(p, intento + 1); });
+      });
+  }
+
+  // secuencial a proposito: en paralelo el proxy gratuito devuelve 408
+  function bajarTodo(){
+    var lotes = [];
+    return PROVINCIAS.reduce(function(cadena, p, k){
+      return cadena.then(function(){
+        $('vivoEstado').textContent = 'Consultando ' + (k + 1) + ' de ' + PROVINCIAS.length + '…';
+        return bajarProvincia(p).then(function(l){ lotes.push(l); });
+      });
+    }, Promise.resolve()).then(function(){ return lotes; });
+  }
+
+  function actualizarEnVivo(){
+    var b = $('btnVivo'), est = $('vivoEstado');
+    b.disabled = true; b.textContent = 'Consultando Facilito…';
+    est.hidden = false; est.textContent = 'Descargando ~0.5 MB. Con datos móviles puede tardar.';
+
+    bajarTodo()
+      .then(function(lotes){
+        var vivos = {};
+        lotes.forEach(function(l){ l.forEach(function(p){ vivos[p.codigoOsinergmin] = p; }); });
+
+        var cambiados = 0, vistos = 0;
+        estaciones.forEach(function(e){
+          var v = vivos[e.cod];
+          if (!v) return;
+          vistos++;
+          var nuevo = {
+            7: precioDe(v, /GASOHOL REGULAR/i),
+            8: precioDe(v, /GASOHOL PREMIUM/i),
+            9: precioDe(v, /Diesel/i)
+          };
+          if (nuevo[7] !== e.precios[7] || nuevo[8] !== e.precios[8] || nuevo[9] !== e.precios[9]) cambiados++;
+          e.precios = nuevo;
+          e.lat = +v.latitud; e.lon = +v.longitud;
+        });
+
+        var hora = new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
+        est.innerHTML = cambiados
+          ? '<b>' + cambiados + '</b> grifo(s) cambiaron de precio. Actualizado ' + hora + '.'
+          : 'Sin cambios respecto a lo que ya tenías. Verificado ' + hora + '.';
+        $('meta').textContent = vistos + ' grifos · precios en vivo de Facilito (' + hora + ')';
+        sincronizarRango(true);
+        rankingGeneral();
+      })
+      .catch(function(err){
+        var propio = ($('proxyUrl').value || '').trim();
+        est.innerHTML = 'No pude actualizar: ' + err.message + '. ' +
+          (propio
+            ? 'Revisa que la URL de tu proxy sea correcta y que permita este origen.'
+            : 'Es el proxy público, que se satura seguido; reintenta o configura uno propio ' +
+              '(ver <code>worker/</code> en el repositorio).') +
+          ' Mientras, sigues viendo los precios del ' + window.FECHA +
+          ', que se refrescan solos cada 3 horas.';
+      })
+      .finally(function(){
+        b.disabled = false; b.textContent = 'Actualizar precios ahora';
+      });
+  }
+
   // ---------------- eventos ----------------
+  $('btnVivo').onclick = actualizarEnVivo;
   autocompletar($('cercaIn'), function(p){ ponerPunto('cerca', p.lat, p.lon, p.label); map.setView([p.lat,p.lon], 14, {animate:false}); });
   autocompletar($('oriIn'),   function(p){ ponerPunto('A', p.lat, p.lon, p.label); });
   autocompletar($('desIn'),   function(p){ ponerPunto('B', p.lat, p.lon, p.label); });
