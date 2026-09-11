@@ -48,7 +48,7 @@ const cols = Object.keys(rows[0]);
 const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
 const csv = [cols.join(',')]
   .concat(rows.map(r => cols.map(c => q(r[c])).join(',')))
-  .join('\r\n');
+  .join('\n');
 
 const salida = path.join(ROOT, 'data', 'mymaps-lima-callao.csv');
 fs.writeFileSync(salida, '﻿' + csv, 'utf8');

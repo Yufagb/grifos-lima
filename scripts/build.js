@@ -27,7 +27,7 @@ const csv = ['codigo_osinergmin,marca,zona,distrito,direccion,lat,lon,premium_li
     r.cod, MARCA[r.m], ZONA[r.z], r.distrito, r.dir, r.lat, r.lon,
     r.premium, DESCUENTOS[r.m], r.final, r.regular, r.diesel
   ].map(q).join(',')))
-  .join('\r\n');
+  .join('\n');
 fs.writeFileSync(path.join(ROOT, 'data', 'premium-lima-callao.csv'), '﻿' + csv, 'utf8');
 
 // ---- resumen ----
