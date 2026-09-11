@@ -1,4 +1,10 @@
-# Precios Gasohol Premium — Lima y Callao (Primax vs Repsol)
+# Precios de combustible — Lima y Callao (Primax vs Repsol)
+
+**App en vivo: https://yufagb.github.io/grifos-lima/**
+
+Los precios se actualizan solos cada día a las 07:00 de Lima
+([workflow](.github/workflows/actualizar.yml)). Cada cambio republica el sitio.
+
 
 Datos scrapeados de **Facilito (Osinergmin)** para comparar el precio real que pagas
 aplicando tus descuentos de convenio.
