@@ -1,0 +1,41 @@
+name: Actualizar precios
+
+# Baja precios y coordenadas frescas de Facilito y los commitea si cambiaron.
+# Funciona sin navegador porque MapaAction.do no exige reCAPTCHA.
+on:
+  schedule:
+    - cron: '0 12 * * *'      # 07:00 en Lima (UTC-5), todos los días
+  workflow_dispatch:           # además, botón para correrlo a mano
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Bajar datos de Facilito
+        run: node scripts/actualizar.js
+
+      - name: Regenerar CSVs
+        run: |
+          node scripts/build.js
+          node scripts/mymaps.js
+
+      - name: Commitear si hubo cambios
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- data/; then
+            echo "Sin cambios de precio."
+          else
+            git add data/
+            git commit -m "Precios de Facilito al $(date -u +%Y-%m-%d)"
+            git push
+          fi

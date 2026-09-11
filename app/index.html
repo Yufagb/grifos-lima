@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grifos Lima y Callao — Primax vs Repsol</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --ink:#14171c; --muted:#5d6673; --line:#e3e7ed;
+    --primax:#f26722; --repsol:#2f5fd0; --good:#0f8a4a; --warn:#b45309; --accent:#14171c;
+    --shadow:0 1px 2px rgba(16,20,28,.06),0 8px 24px rgba(16,20,28,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0f1216;--panel:#171b21;--ink:#e9edf3;--muted:#9aa4b2;--line:#262c35;
+      --good:#35c07a;--warn:#e0a34a;--accent:#e9edf3;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);}
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .app{display:grid;grid-template-columns:390px 1fr;height:100vh}
+  @media (max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto 55vh}}
+
+  .side{overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:14px}
+  h1{font-size:17px;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:11.5px;margin:0 0 12px}
+
+  fieldset{border:1px solid var(--line);border-radius:10px;padding:8px 12px 12px;margin:0 0 10px}
+  legend{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:0 5px}
+  label{display:block;font-size:11.5px;color:var(--muted);margin:8px 0 3px}
+  input,select,button{font:inherit;color:inherit}
+  input[type=text],input[type=number],input[type=password],select{width:100%;padding:7px 9px;
+    border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  input:focus,select:focus{outline:2px solid var(--primax);outline-offset:-1px}
+  .row{display:flex;gap:8px}.row>*{flex:1}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px}
+  button.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
+  button.mini{padding:5px 8px;font-size:12px}
+  button:disabled{opacity:.5;cursor:default}
+
+  .tabs{display:flex;gap:4px;background:var(--bg);padding:3px;border-radius:10px;margin-bottom:10px}
+  .tabs button{flex:1;border:0;background:transparent;border-radius:8px;font-weight:600;font-size:13px;padding:7px}
+  .tabs button[aria-selected=true]{background:var(--panel);box-shadow:var(--shadow)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{font-size:12px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);
+    background:var(--bg);cursor:pointer;user-select:none}
+  .chip[aria-pressed=true]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+
+  .ac{position:relative}
+  .acbox{position:absolute;z-index:1200;left:0;right:0;top:100%;margin-top:3px;background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);max-height:230px;overflow-y:auto}
+  .acbox div{padding:7px 9px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--line)}
+  .acbox div:last-child{border-bottom:0}
+  .acbox div:hover,.acbox div.sel{background:var(--bg)}
+  .acbox b{display:block;font-size:13px}
+  .acbox span{color:var(--muted);font-size:11.5px}
+  .acbox .src{float:right;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+  .card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;
+    background:var(--panel);cursor:pointer}
+  .card:hover{box-shadow:var(--shadow)}
+  .card.best{border-color:var(--good);border-width:2px}
+  .card h3{margin:0 0 2px;font-size:13px;display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .card p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+  .price{float:right;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .price small{font-weight:400;font-size:11px;color:var(--muted);display:block;text-align:right}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:5px;
+    background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-top:5px}
+  .tag.win{background:var(--good);border-color:var(--good);color:#fff}
+  .tag.ojo{border-color:var(--warn);color:var(--warn)}
+  .ir{display:flex;gap:6px;margin-top:8px}
+  .ir a{flex:1;text-align:center;text-decoration:none;font-size:11.5px;font-weight:600;
+    padding:5px 6px;border-radius:7px;border:1px solid var(--line);color:var(--ink);background:var(--bg)}
+  .ir a:hover{border-color:var(--primax)}
+  .ir a.gm{color:#1a73e8}.ir a.wz{color:#33ccff}
+
+  .reco{border:2px solid var(--good);border-radius:10px;padding:11px 12px;margin-bottom:10px;cursor:pointer}
+  .reco .kicker{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--good);font-weight:700}
+  .reco h2{margin:3px 0 3px;font-size:15px}
+  .reco p{margin:0;font-size:12px;color:var(--muted)}
+  .reco .why{margin-top:6px;font-size:12px;color:var(--ink)}
+
+  .note{font-size:11.5px;color:var(--muted);margin:10px 0 6px}
+  .err{color:#c0392b;font-size:12px;margin-top:8px}
+  .hint{font-size:11px;color:var(--muted);margin-top:5px}
+  details summary{font-size:11.5px;color:var(--muted);cursor:pointer}
+  #map{height:100%}
+  .leaflet-container{background:var(--bg);font:inherit}
+  .pin{border-radius:999px;color:#fff;font-weight:700;font-size:11px;text-align:center;
+    line-height:20px;height:20px;box-shadow:0 1px 4px rgba(0,0,0,.35);white-space:nowrap;padding:0 6px}
+  .legend{background:var(--panel);padding:8px 10px;border-radius:8px;box-shadow:var(--shadow);font-size:12px}
+  .legend div{display:flex;align-items:center;gap:6px;margin:2px 0}
+  .picking{position:absolute;z-index:1000;top:10px;left:50%;transform:translateX(-50%);
+    background:var(--accent);color:var(--panel);padding:7px 14px;border-radius:999px;
+    font-size:13px;font-weight:600;box-shadow:var(--shadow)}
+  main{position:relative}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <h1>Grifos Lima y Callao — Primax vs Repsol</h1>
+    <p class="sub" id="meta"></p>
+
+    <fieldset>
+      <legend>Mis descuentos (S/ por galón)</legend>
+      <div class="row">
+        <div><label for="dC">Primax</label><input type="number" id="dC" step="0.01" value="1.00"></div>
+        <div><label for="dR">Repsol</label><input type="number" id="dR" step="0.01" value="3.00"></div>
+      </div>
+      <div class="chips">
+        <span class="chip" id="chipC" role="button" aria-pressed="true">Primax / COESTI</span>
+        <span class="chip" id="chipR" role="button" aria-pressed="true">Repsol</span>
+      </div>
+      <label for="producto">Combustible</label>
+      <select id="producto">
+        <option value="8" selected>Gasohol Premium</option>
+        <option value="7">Gasohol Regular</option>
+        <option value="9">Diesel B5 S-50 UV</option>
+      </select>
+    </fieldset>
+
+    <fieldset>
+      <legend>Rango de precio (con descuento)</legend>
+      <div class="row">
+        <div><label for="pMin">Desde S/</label><input type="number" id="pMin" step="0.1"></div>
+        <div><label for="pMax">Hasta S/</label><input type="number" id="pMax" step="0.1"></div>
+      </div>
+      <input type="range" id="slider" step="0.01" style="width:100%;margin-top:10px;accent-color:var(--primax)">
+      <p class="hint" id="conteo"></p>
+      <button class="mini" id="btnReset" style="width:100%">Quitar filtro de precio</button>
+    </fieldset>
+
+    <div class="tabs" role="tablist">
+      <button id="tabCerca" role="tab" aria-selected="true">Cerca de mí</button>
+      <button id="tabRuta"  role="tab" aria-selected="false">En mi ruta</button>
+    </div>
+
+    <!-- ---------------- CERCA ---------------- -->
+    <section id="panCerca">
+      <fieldset>
+        <legend>Desde dónde</legend>
+        <div class="ac">
+          <input type="text" id="cercaIn" placeholder="Dirección, negocio o referencia" autocomplete="off">
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="mini" id="btnGps">Mi ubicación</button>
+          <button class="mini" id="btnPinCerca">Marcar en el mapa</button>
+        </div>
+        <p class="hint" id="cercaEstado">Sin punto de partida.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Parámetros</legend>
+        <div class="row">
+          <div><label for="radio">Radio (km)</label><input type="number" id="radio" value="3" step="0.5" min="0.5"></div>
+          <div><label for="galC">Galones</label><input type="number" id="galC" value="10" step="1" min="1"></div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <div><label for="orden">Ordenar por</label>
+            <select id="orden">
+              <option value="total">Costo total (precio + viaje)</option>
+              <option value="precio">Precio por galón</option>
+              <option value="dist">Distancia</option>
+            </select>
+          </div>
+          <div><label for="cuantos">Cuántos mostrar</label>
+            <input type="number" id="cuantos" value="10" min="1" max="50"></div>
+        </div>
+        <p class="hint">El rango de precio de arriba también se aplica aquí.</p>
+        <button class="primary" id="btnCerca" style="margin-top:10px;width:100%">Buscar alrededor</button>
+        <p class="err" id="errC"></p>
+      </fieldset>
+    </section>
+
+    <!-- ---------------- RUTA ---------------- -->
+    <section id="panRuta" hidden>
+      <fieldset>
+        <legend>Ruta</legend>
+        <label for="oriIn">Desde (A)</label>
+        <div class="ac"><input type="text" id="oriIn" placeholder="Dirección o referencia" autocomplete="off"></div>
+        <div class="row" style="margin-top:6px">
+          <button class="mini" id="btnGpsA">Mi ubicación</button>
+          <button class="mini" id="btnPinA">Marcar en el mapa</button>
+        </div>
+        <label for="desIn">Hasta (B)</label>
+        <div class="ac"><input type="text" id="desIn" placeholder="Dirección o referencia" autocomplete="off"></div>
+        <button class="mini" id="btnPinB" style="margin-top:6px;width:100%">Marcar B en el mapa</button>
+        <div class="row" style="margin-top:6px">
+          <div><label for="desvio">Desvío máx. (m)</label><input type="number" id="desvio" value="600" step="100"></div>
+          <div><label for="galR">Galones</label><input type="number" id="galR" value="10" step="1"></div>
+        </div>
+        <button class="primary" id="btnRuta" style="margin-top:10px;width:100%">Buscar grifos en la ruta</button>
+        <button id="btnLimpiar" style="margin-top:6px;width:100%">Limpiar</button>
+        <p class="err" id="errR"></p>
+      </fieldset>
+    </section>
+
+    <details style="margin-bottom:10px">
+      <summary>Buscador de lugares — configuración</summary>
+      <p class="hint">Busco con OpenStreetMap (Photon + Nominatim). Encuentra calles y lugares conocidos,
+        pero le faltan negocios pequeños. Si uno no aparece, usa <b>Marcar en el mapa</b>.</p>
+      <label for="gkey">API key de Google Maps (opcional, se guarda solo en este navegador)</label>
+      <input type="password" id="gkey" placeholder="pégala aquí para buscar con Google" autocomplete="off">
+      <p class="hint">Necesita la <i>Places API (New)</i> activada y facturación en tu cuenta de Google.
+        Restríngela por referrer HTTP antes de usarla.</p>
+    </details>
+
+    <div id="lista"></div>
+  </aside>
+  <main>
+    <div id="map"></div>
+    <div class="picking" id="picking" hidden></div>
+  </main>
+</div>
+
+<script src="../data/data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol'};
+  var COLOR = {C:'#f26722', P:'#f26722', R:'#2f5fd0'};
+  var ZONA  = {L:'Lima', K:'Callao'};
+  var KM_POR_GALON = 38;   // rendimiento supuesto para costear el viaje
+  var FACTOR_VIA = 1.35;   // linea recta -> distancia por calle, aproximado
+  var $ = function(id){ return document.getElementById(id); };
+
+  // [codigo, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel]
+  var estaciones = window.DATA.map(function(r,i){
+    return {i:i, cod:r[0], m:r[1], z:r[2], distrito:r[3], dir:r[4],
+            lat:r[5], lon:r[6], precios:{7:r[7], 8:r[8], 9:r[9]}};
+  });
+  var col = function(){ return +$('producto').value; };
+  var nombreProducto = function(){ return $('producto').selectedOptions[0].text; };
+
+  var desc = function(m){ return m === 'R' ? +$('dR').value : +$('dC').value; };
+  var lista = function(e){ return e.precios[col()]; };
+  var fin   = function(e){ var p = lista(e); return p == null ? null : +(p - desc(e.m)).toFixed(2); };
+  var marcaOn = function(e){
+    return e.m === 'R' ? $('chipR').getAttribute('aria-pressed') === 'true'
+                       : $('chipC').getAttribute('aria-pressed') === 'true';
+  };
+  var visible = function(e){
+    if (!marcaOn(e)) return false;
+    if (lista(e) == null) return false;          // no reporta este combustible
+    var lo = parseFloat($('pMin').value), hi = parseFloat($('pMax').value), p = fin(e);
+    if (!isNaN(lo) && p < lo - 0.001) return false;
+    if (!isNaN(hi) && p > hi + 0.001) return false;
+    return true;
+  };
+
+  // El rango arranca en los extremos reales de los datos y se reajusta si cambian los descuentos.
+  function rangoDatos(){
+    var ps = estaciones.filter(function(e){ return marcaOn(e) && lista(e) != null; }).map(fin);
+    if (!ps.length) return null;
+    return {lo:+Math.min.apply(null, ps).toFixed(2), hi:+Math.max.apply(null, ps).toFixed(2)};
+  }
+  function sincronizarRango(reiniciar){
+    var r = rangoDatos();
+    if (!r) { $('conteo').textContent = 'Sin marcas seleccionadas.'; return; }
+    ['pMin','pMax'].forEach(function(id){ $(id).min = r.lo; $(id).max = r.hi; });
+    if (reiniciar || $('pMin').value === '' || +$('pMin').value < r.lo) $('pMin').value = r.lo;
+    if (reiniciar || $('pMax').value === '' || +$('pMax').value > r.hi) $('pMax').value = r.hi;
+    var s = $('slider');
+    s.min = r.lo; s.max = r.hi;
+    if (reiniciar || s.value === '') s.value = $('pMax').value;
+    var n = estaciones.filter(visible).length;
+    var conProducto = estaciones.filter(function(e){ return lista(e) != null; }).length;
+    $('conteo').innerHTML = '<b>' + n + '</b> de ' + conProducto +
+      ' grifos entre S/ ' + (+$('pMin').value).toFixed(2) + ' y S/ ' + (+$('pMax').value).toFixed(2) +
+      '. Arrastra para mover el tope.';
+  }
+
+  $('meta').textContent = window.DATA.length + ' grifos · ' + estaciones.length +
+    ' con coordenadas oficiales · precios ' + window.FECHA + ' · ' + window.FUENTE;
+
+  // ---------------- mapa ----------------
+  var map = L.map('map').setView([-12.06,-77.04], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'&copy; OpenStreetMap'
+  }).addTo(map);
+  window.__map = map;   // handle para depurar desde la consola
+  var capaGrifos = L.layerGroup().addTo(map);
+  var capaRuta = L.layerGroup().addTo(map);
+  var marcadores = {};
+
+  var leyenda = L.control({position:'bottomright'});
+  leyenda.onAdd = function(){
+    var d = L.DomUtil.create('div','legend');
+    d.innerHTML = '<div><span style="width:10px;height:10px;border-radius:50%;background:#f26722;display:inline-block"></span> Primax</div>' +
+                  '<div><span style="width:10px;height:10px;border-radius:50%;background:#2f5fd0;display:inline-block"></span> Repsol</div>' +
+                  '<div style="opacity:.7;margin-top:4px">Precio con tu descuento</div>';
+    return d;
+  };
+  leyenda.addTo(map);
+
+  function pin(e, destacado){
+    var p = fin(e);
+    return L.marker([e.lat, e.lon], {
+      icon: L.divIcon({ className:'', iconSize:null,
+        html:'<div class="pin" style="background:'+COLOR[e.m]+
+             (destacado?';outline:3px solid #0f8a4a':'')+'">'+p.toFixed(2)+'</div>' })
+    }).bindPopup(
+      '<b>'+MARCA[e.m]+'</b><br>'+e.dir+'<br>'+e.distrito+', '+ZONA[e.z]+
+      '<br>'+nombreProducto()+' — lista S/ '+lista(e).toFixed(2)+
+      ' &nbsp; <b>con descuento: S/ '+p.toFixed(2)+'</b>'+
+      '<br><small>Código Osinergmin '+e.cod+'</small>'+
+      enlaces(e)
+    );
+  }
+  function dibujar(destacar){
+    capaGrifos.clearLayers(); marcadores = {};
+    estaciones.filter(visible).forEach(function(e){
+      var m = pin(e, destacar && destacar.indexOf(e.i) >= 0);
+      marcadores[e.i] = m; capaGrifos.addLayer(m);
+    });
+  }
+
+  // ---------------- geometría ----------------
+  function distM(a, b){
+    var R=6371000, t=Math.PI/180;
+    var dLat=(b[0]-a[0])*t, dLon=(b[1]-a[1])*t;
+    var s=Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(a[0]*t)*Math.cos(b[0]*t)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return 2*R*Math.asin(Math.sqrt(s));
+  }
+  function distSeg(p, a, b){
+    var kx = 111320*Math.cos(p[0]*Math.PI/180), ky = 110540;
+    var px=(p[1]-a[1])*kx, py=(p[0]-a[0])*ky;
+    var bx=(b[1]-a[1])*kx, by=(b[0]-a[0])*ky;
+    var len = bx*bx+by*by;
+    var t = len ? Math.max(0, Math.min(1, (px*bx+py*by)/len)) : 0;
+    var dx = px-bx*t, dy = py-by*t;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function distARuta(e, linea){
+    var min = Infinity, idx = 0;
+    for (var k=0;k<linea.length-1;k++){
+      var d = distSeg([e.lat,e.lon], linea[k], linea[k+1]);
+      if (d < min){ min = d; idx = k; }
+    }
+    return {d:min, idx:idx};
+  }
+
+  // ---------------- buscador de lugares ----------------
+  // Cadena: Google (si hay key) -> Photon (OSM, bueno con nombres) -> Nominatim (OSM, bueno con calles)
+  var LIMA = {lat:-12.06, lon:-77.04};
+  try { if (localStorage.getItem('gkey')) $('gkey').value = localStorage.getItem('gkey'); } catch(e){}
+  $('gkey').oninput = function(){ try{ localStorage.setItem('gkey', this.value.trim()); }catch(e){} };
+
+  function buscarGoogle(q){
+    var key = $('gkey').value.trim();
+    if (!key) return Promise.resolve([]);
+    return fetch('https://places.googleapis.com/v1/places:searchText', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Goog-Api-Key':key,
+               'X-Goog-FieldMask':'places.displayName,places.formattedAddress,places.location'},
+      body: JSON.stringify({ textQuery:q, languageCode:'es', maxResultCount:6,
+        locationBias:{circle:{center:{latitude:LIMA.lat,longitude:LIMA.lon},radius:40000}} })
+    }).then(function(r){ return r.json(); }).then(function(j){
+      return (j.places||[]).map(function(p){
+        return {nombre:p.displayName && p.displayName.text, detalle:p.formattedAddress,
+                lat:p.location.latitude, lon:p.location.longitude, src:'google'};
+      });
+    }).catch(function(){ return []; });
+  }
+  function buscarPhoton(q){
+    return fetch('https://photon.komoot.io/api/?limit=6&lat='+LIMA.lat+'&lon='+LIMA.lon+'&q='+encodeURIComponent(q))
+      .then(function(r){ return r.json(); }).then(function(j){
+        return (j.features||[])
+          .filter(function(f){ return f.properties.countrycode === 'PE'; })
+          .map(function(f){
+            var p = f.properties;
+            return {nombre: p.name || [p.street,p.housenumber].filter(Boolean).join(' ') || '?',
+                    detalle: [p.street && p.name!==p.street ? p.street : null, p.district, p.city, p.county]
+                             .filter(Boolean).join(', '),
+                    lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], src:'osm'};
+          });
+      }).catch(function(){ return []; });
+  }
+  function buscarNominatim(q){
+    return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&q=' +
+                 encodeURIComponent(q), {headers:{'Accept-Language':'es'}})
+      .then(function(r){ return r.json(); }).then(function(j){
+        return j.map(function(x){
+          var partes = x.display_name.split(',');
+          return {nombre:partes[0], detalle:partes.slice(1,4).join(',').trim(),
+                  lat:+x.lat, lon:+x.lon, src:'osm'};
+        });
+      }).catch(function(){ return []; });
+  }
+  function buscarLugar(q){
+    return buscarGoogle(q).then(function(g){
+      if (g.length) return g;
+      return buscarPhoton(q).then(function(p){
+        if (p.length) return p;
+        return buscarNominatim(q);
+      });
+    });
+  }
+
+  // autocompletado sobre un input; onPick recibe {lat,lon,label}
+  function autocompletar(input, onPick){
+    var caja = null, timer = null, ultimo = '';
+    function cerrar(){ if (caja){ caja.remove(); caja = null; } }
+    input.addEventListener('input', function(){
+      var q = input.value.trim();
+      clearTimeout(timer);
+      if (q.length < 3){ cerrar(); return; }
+      timer = setTimeout(function(){
+        if (q === ultimo) return;
+        ultimo = q;
+        buscarLugar(q).then(function(res){
+          cerrar();
+          if (!res.length){
+            caja = document.createElement('div'); caja.className='acbox';
+            caja.innerHTML = '<div style="color:var(--muted)">Sin resultados. Usa <b>Marcar en el mapa</b>.</div>';
+            input.parentNode.appendChild(caja);
+            return;
+          }
+          caja = document.createElement('div'); caja.className = 'acbox';
+          res.forEach(function(r){
+            var d = document.createElement('div');
+            d.innerHTML = '<span class="src">'+r.src+'</span><b>'+r.nombre+'</b><span>'+(r.detalle||'')+'</span>';
+            d.onclick = function(){
+              input.value = r.nombre + (r.detalle ? ', '+r.detalle.split(',')[0] : '');
+              cerrar();
+              onPick({lat:r.lat, lon:r.lon, label:input.value});
+            };
+            caja.appendChild(d);
+          });
+          input.parentNode.appendChild(caja);
+        });
+      }, 350);
+    });
+    input.addEventListener('blur', function(){ setTimeout(cerrar, 220); });
+  }
+
+  // ---------------- marcar en el mapa ----------------
+  var puntos = { cerca:null, A:null, B:null };
+  var pinesUI = {};
+  var modoPin = null;
+
+  function ponerPunto(cual, lat, lon, label){
+    puntos[cual] = {lat:lat, lon:lon, label:label || (lat.toFixed(4)+', '+lon.toFixed(4))};
+    if (pinesUI[cual]) capaRuta.removeLayer(pinesUI[cual]);
+    var color = cual === 'B' ? '#c0392b' : '#0f8a4a';
+    pinesUI[cual] = L.circleMarker([lat,lon], {radius:8, color:color, fillColor:color, fillOpacity:1})
+      .bindPopup((cual==='B'?'B — destino':(cual==='A'?'A — origen':'Mi punto'))+'<br>'+puntos[cual].label)
+      .addTo(capaRuta);
+    if (cual === 'cerca') $('cercaEstado').textContent = 'Partiendo de: ' + puntos[cual].label;
+  }
+  function pedirPin(cual, etiqueta){
+    modoPin = cual;
+    $('picking').hidden = false;
+    $('picking').textContent = etiqueta + ' — haz clic en el mapa';
+    map.getContainer().style.cursor = 'crosshair';
+  }
+  map.on('click', function(ev){
+    if (!modoPin) return;
+    ponerPunto(modoPin, ev.latlng.lat, ev.latlng.lng, 'punto marcado en el mapa');
+    var input = modoPin === 'A' ? $('oriIn') : modoPin === 'B' ? $('desIn') : $('cercaIn');
+    input.value = 'Punto en el mapa (' + ev.latlng.lat.toFixed(4) + ', ' + ev.latlng.lng.toFixed(4) + ')';
+    modoPin = null; $('picking').hidden = true; map.getContainer().style.cursor = '';
+  });
+
+  function gps(cual, boton){
+    var t = boton.textContent; boton.textContent = 'Ubicando…';
+    navigator.geolocation.getCurrentPosition(function(p){
+      ponerPunto(cual, p.coords.latitude, p.coords.longitude, 'mi ubicación');
+      var input = cual === 'A' ? $('oriIn') : $('cercaIn');
+      input.value = 'Mi ubicación (' + p.coords.latitude.toFixed(4) + ', ' + p.coords.longitude.toFixed(4) + ')';
+      boton.textContent = 'Ubicación ✓';
+      map.setView([p.coords.latitude, p.coords.longitude], 14, {animate:false});
+      setTimeout(function(){ boton.textContent = t; }, 2500);
+    }, function(){ boton.textContent = 'No pude ubicarte'; setTimeout(function(){ boton.textContent = t; }, 2500); });
+  }
+
+  // ---------------- abrir en Google Maps / Waze ----------------
+  // Las coordenadas vienen del propio Osinergmin, asi que van directas a los navegadores.
+  function enlaces(e){
+    var ll = e.lat + ',' + e.lon;
+    var gm = 'https://www.google.com/maps/search/?api=1&query=' + ll;
+    var wz = 'https://waze.com/ul?ll=' + ll + '&navigate=yes';
+    return '<div class="ir">' +
+      '<a class="gm" href="' + gm + '" target="_blank" rel="noopener">Google Maps</a>' +
+      '<a class="wz" href="' + wz + '" target="_blank" rel="noopener">Waze</a>' +
+      '</div>';
+  }
+
+  // ---------------- tarjetas ----------------
+  function tarjeta(e, extra, best){
+    var p = fin(e);
+    var div = document.createElement('div');
+    div.className = 'card' + (best ? ' best' : '');
+    div.innerHTML =
+      '<span class="price">S/ '+p.toFixed(2)+'<small>lista '+lista(e).toFixed(2)+'</small></span>' +
+      '<h3><span class="dot" style="background:'+COLOR[e.m]+'"></span>'+MARCA[e.m]+'</h3>' +
+      '<p>'+e.dir+'</p><p>'+e.distrito+', '+ZONA[e.z]+'</p>' + (extra || '') + enlaces(e);
+    activar(div, e);
+    return div;
+  }
+  function recomendacion(e, titulo, porque, extra){
+    var div = document.createElement('div');
+    div.className = 'reco';
+    div.innerHTML = '<div class="kicker">'+titulo+'</div>' +
+      '<h2>'+MARCA[e.m]+' — S/ '+fin(e).toFixed(2)+'/gal</h2>' +
+      '<p style="font-size:11px">'+nombreProducto()+'</p>' +
+      '<p>'+e.dir+' · '+e.distrito+'</p>' +
+      '<div class="why">'+porque+'</div>' + (extra||'') + enlaces(e);
+    activar(div, e);
+    return div;
+  }
+  // centra el mapa al hacer clic, salvo cuando el clic fue en un enlace de navegacion
+  function activar(div, e){
+    div.onclick = function(ev){
+      if (ev.target.closest('.ir')) return;
+      map.setView([e.lat,e.lon], 16, {animate:false});
+      if (marcadores[e.i]) marcadores[e.i].openPopup();
+    };
+  }
+  function avisoUbicacion(){ return ''; }   // coordenadas oficiales: ya no hay imprecision que avisar
+
+  // ---------------- ranking general ----------------
+  function rankingGeneral(){
+    if ($('tabRuta').getAttribute('aria-selected') === 'true' && capaRuta.getLayers().length) return;
+    var lista = $('lista'); lista.innerHTML = '';
+    var arr = estaciones.filter(visible).slice().sort(function(a,b){ return fin(a)-fin(b); });
+    if (!arr.length){ lista.innerHTML = '<p class="err">No hay marcas seleccionadas.</p>'; dibujar(); return; }
+    var h = document.createElement('p');
+    h.className = 'note';
+    h.innerHTML = '<b>Los 12 más baratos de Lima y Callao</b> — '+nombreProducto()+', con tus descuentos. ' +
+                  'Elige un punto de partida arriba para una recomendación cerca de ti.';
+    lista.appendChild(h);
+    arr.slice(0,12).forEach(function(e,k){
+      lista.appendChild(tarjeta(e, (k===0?'<span class="tag win">el más barato</span>':'')+avisoUbicacion(e), k===0));
+    });
+    dibujar(arr.slice(0,3).map(function(e){return e.i;}));
+  }
+
+  // ---------------- buscar alrededor ----------------
+  function buscarCerca(){
+    $('errC').textContent = '';
+    var pt = puntos.cerca;
+    if (!pt){ $('errC').textContent = 'Primero marca desde dónde: usa tu ubicación, busca una dirección o marca en el mapa.'; return; }
+
+    var radio = (+$('radio').value || 3) * 1000;
+    var gal   = +$('galC').value || 10;
+    var orden = $('orden').value;
+    var cuantos = +$('cuantos').value || 10;
+
+    var cand = estaciones.filter(visible).map(function(e){
+      var d = distM([pt.lat,pt.lon],[e.lat,e.lon]);
+      var kmVia = (d*FACTOR_VIA)/1000;
+      return {e:e, dist:d, kmVia:kmVia,
+              total: fin(e)*gal + ((kmVia*2)/KM_POR_GALON)*fin(e)};
+    }).filter(function(c){ return c.dist <= radio; });
+
+    var lista = $('lista'); lista.innerHTML = '';
+    if (!cand.length){
+      lista.innerHTML = '<p class="err">Ningún grifo dentro de ' + (radio/1000) +
+        ' km con el rango de precio actual. Amplía el radio o el rango.</p>';
+      dibujar(); return;
+    }
+
+    var porPrecio = cand.slice().sort(function(a,b){ return fin(a.e)-fin(b.e) || a.dist-b.dist; });
+    var porCerca  = cand.slice().sort(function(a,b){ return a.dist-b.dist; });
+    var porTotal  = cand.slice().sort(function(a,b){ return a.total-b.total; });
+    var mejor = porTotal[0];
+
+    // por qué gana
+    var porque;
+    if (porPrecio[0].e === porCerca[0].e){
+      porque = 'Es el más barato <b>y</b> el más cercano del radio. No hay discusión.';
+    } else if (mejor.e === porPrecio[0].e){
+      porque = 'Es el más barato del radio, a <b>' + (mejor.dist/1000).toFixed(1) + ' km</b>. ' +
+        'El más cercano (' + (porCerca[0].dist/1000).toFixed(1) + ' km) cuesta S/ ' +
+        (fin(porCerca[0].e)-fin(mejor.e)).toFixed(2) + ' más por galón: ' +
+        'S/ ' + (porCerca[0].total-mejor.total).toFixed(2) + ' más en total por ' + gal + ' gal.';
+    } else {
+      porque = 'A <b>' + (mejor.dist/1000).toFixed(1) + ' km</b>. El más barato del radio está a S/ ' +
+        fin(porPrecio[0].e).toFixed(2) + ' pero a ' + (porPrecio[0].dist/1000).toFixed(1) +
+        ' km, y el viaje se come la diferencia: te costaría S/ ' +
+        (porPrecio[0].total-mejor.total).toFixed(2) + ' más en total.';
+    }
+    lista.appendChild(recomendacion(mejor.e, 'Te conviene este', porque,
+      '<span class="tag">' + (mejor.dist/1000).toFixed(1) + ' km</span> ' +
+      '<span class="tag">total S/ ' + mejor.total.toFixed(2) + ' por ' + gal + ' gal</span>' +
+      avisoUbicacion(mejor.e)));
+
+    var h = document.createElement('p');
+    h.className = 'note';
+    h.innerHTML = '<b>' + cand.length + '</b> grifos en ' + (radio/1000) + ' km. Ordenados por ' +
+      (orden==='total' ? 'costo total (precio + viaje ida y vuelta)' :
+       orden==='precio' ? 'precio por galón' : 'distancia') + '.';
+    lista.appendChild(h);
+
+    var arr = orden==='precio' ? porPrecio : orden==='dist' ? porCerca : porTotal;
+    arr.slice(0, cuantos).forEach(function(c,k){
+      var tags = '';
+      if (c.e === porPrecio[0].e) tags += '<span class="tag win">más barato</span> ';
+      if (c.e === porCerca[0].e)  tags += '<span class="tag win">más cerca</span> ';
+      tags += '<span class="tag">' + (c.dist/1000).toFixed(1) + ' km</span> ' +
+              '<span class="tag">total S/ ' + c.total.toFixed(2) + '</span>' + avisoUbicacion(c.e);
+      lista.appendChild(tarjeta(c.e, tags, k===0));
+    });
+
+    dibujar(arr.slice(0,3).map(function(c){ return c.e.i; }));
+    L.circle([pt.lat,pt.lon], {radius:radio, color:'#0f8a4a', weight:1, fillOpacity:.05}).addTo(capaRuta);
+    map.fitBounds(L.latLng(pt.lat,pt.lon).toBounds(radio*2.2), {animate:false});
+  }
+
+  // ---------------- buscar en la ruta ----------------
+  function ruta(a, b){
+    var url = 'https://router.project-osrm.org/route/v1/driving/' +
+              a.lon+','+a.lat+';'+b.lon+','+b.lat + '?overview=full&geometries=geojson';
+    return fetch(url).then(function(r){ return r.json(); }).then(function(j){
+      if (!j.routes || !j.routes.length) throw new Error('No pude trazar la ruta.');
+      return { linea: j.routes[0].geometry.coordinates.map(function(c){ return [c[1], c[0]]; }),
+               km: j.routes[0].distance/1000, min: j.routes[0].duration/60 };
+    });
+  }
+
+  function buscarRuta(){
+    $('errR').textContent = '';
+    if (!puntos.A || !puntos.B){
+      $('errR').textContent = 'Necesito A y B. Elígelos del buscador o márcalos en el mapa.'; return;
+    }
+    $('btnRuta').disabled = true; $('btnRuta').textContent = 'Buscando…';
+
+    ruta(puntos.A, puntos.B).then(function(r){
+      L.polyline(r.linea, {color:'#14171c', weight:5, opacity:.35}).addTo(capaRuta);
+      map.fitBounds(L.latLngBounds(r.linea).pad(0.1), {animate:false});
+
+      var tope = +$('desvio').value || 600;
+      var gal  = +$('galR').value || 10;
+
+      var cand = estaciones.filter(visible).map(function(e){
+        var dr = distARuta(e, r.linea);
+        return {e:e, desvio:dr.d, idx:dr.idx,
+                alDestino: distM([e.lat,e.lon],[puntos.B.lat,puntos.B.lon]),
+                progreso: dr.idx / r.linea.length};
+      }).filter(function(c){ return c.desvio <= tope; });
+
+      cand.forEach(function(c){
+        var kmExtra = (c.desvio*2)/1000;
+        c.total = fin(c.e)*gal + (kmExtra/KM_POR_GALON)*fin(c.e);
+      });
+      cand.sort(function(x,y){ return x.total - y.total; });
+
+      var lista = $('lista'); lista.innerHTML = '';
+      if (!cand.length){
+        lista.innerHTML = '<p class="err">Ningún grifo a menos de ' + tope +
+          ' m del camino. Sube el desvío máximo.</p>';
+        dibujar(); return;
+      }
+
+      var masBarato    = cand.slice().sort(function(x,y){ return fin(x.e)-fin(y.e); })[0];
+      var cercaDestino = cand.slice().sort(function(x,y){ return x.alDestino-y.alDestino; })[0];
+      var mejor = cand[0];
+
+      var porque = mejor.e === masBarato.e
+        ? 'Es el más barato de toda la ruta y solo te desvías ' + Math.round(mejor.desvio) + ' m.'
+        : 'El más barato de la ruta cuesta S/ ' + fin(masBarato.e).toFixed(2) + ', pero está a ' +
+          Math.round(masBarato.desvio) + ' m del camino: el desvío te sale más caro que el ahorro.';
+      lista.appendChild(recomendacion(mejor.e, 'Mejor parada de la ruta', porque,
+        '<span class="tag">desvío ' + Math.round(mejor.desvio) + ' m</span> ' +
+        '<span class="tag">' + Math.round(mejor.progreso*100) + '% del trayecto</span> ' +
+        '<span class="tag">total S/ ' + mejor.total.toFixed(2) + '</span>' + avisoUbicacion(mejor.e)));
+
+      var h = document.createElement('p');
+      h.className = 'note';
+      h.innerHTML = '<b>Ruta:</b> ' + r.km.toFixed(1) + ' km · ' + Math.round(r.min) + ' min. <b>' +
+        cand.length + '</b> grifos a menos de ' + tope + ' m del camino, por costo total de ' + gal + ' gal.';
+      lista.appendChild(h);
+
+      cand.slice(0,15).forEach(function(c,k){
+        var tags = '';
+        if (c.e === masBarato.e)    tags += '<span class="tag win">precio más bajo</span> ';
+        if (c.e === cercaDestino.e) tags += '<span class="tag">más cerca de B</span> ';
+        tags += '<span class="tag">desvío ' + Math.round(c.desvio) + ' m</span> ' +
+                '<span class="tag">' + Math.round(c.progreso*100) + '% del trayecto</span> ' +
+                '<span class="tag">total S/ ' + c.total.toFixed(2) + '</span>' + avisoUbicacion(c.e);
+        lista.appendChild(tarjeta(c.e, tags, k===0));
+      });
+      dibujar(cand.slice(0,3).map(function(c){ return c.e.i; }));
+    })
+    .catch(function(e){ $('errR').textContent = e.message; })
+    .finally(function(){ $('btnRuta').disabled=false; $('btnRuta').textContent='Buscar grifos en la ruta'; });
+  }
+
+  // ---------------- eventos ----------------
+  autocompletar($('cercaIn'), function(p){ ponerPunto('cerca', p.lat, p.lon, p.label); map.setView([p.lat,p.lon], 14, {animate:false}); });
+  autocompletar($('oriIn'),   function(p){ ponerPunto('A', p.lat, p.lon, p.label); });
+  autocompletar($('desIn'),   function(p){ ponerPunto('B', p.lat, p.lon, p.label); });
+
+  $('btnGps').onclick     = function(){ gps('cerca', this); };
+  $('btnGpsA').onclick    = function(){ gps('A', this); };
+  $('btnPinCerca').onclick= function(){ pedirPin('cerca','Tu punto de partida'); };
+  $('btnPinA').onclick    = function(){ pedirPin('A','Origen A'); };
+  $('btnPinB').onclick    = function(){ pedirPin('B','Destino B'); };
+  $('btnCerca').onclick   = buscarCerca;
+  $('btnRuta').onclick    = buscarRuta;
+  $('btnLimpiar').onclick = function(){
+    capaRuta.clearLayers(); pinesUI = {}; puntos = {cerca:null, A:null, B:null};
+    ['cercaIn','oriIn','desIn'].forEach(function(id){ $(id).value=''; });
+    $('cercaEstado').textContent = 'Sin punto de partida.';
+    $('errR').textContent=''; $('errC').textContent='';
+    rankingGeneral(); map.setView([-12.06,-77.04], 11, {animate:false});
+  };
+
+  function cambiarTab(cual){
+    var cerca = cual === 'cerca';
+    $('tabCerca').setAttribute('aria-selected', cerca);
+    $('tabRuta').setAttribute('aria-selected', !cerca);
+    $('panCerca').hidden = !cerca;
+    $('panRuta').hidden = cerca;
+  }
+  $('tabCerca').onclick = function(){ cambiarTab('cerca'); };
+  $('tabRuta').onclick  = function(){ cambiarTab('ruta'); };
+
+  ['chipC','chipR'].forEach(function(id){
+    $(id).onclick = function(){
+      this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
+      sincronizarRango(true); rankingGeneral();
+    };
+  });
+  ['dC','dR'].forEach(function(id){
+    $(id).oninput = function(){ sincronizarRango(true); rankingGeneral(); };
+  });
+
+  // rango de precio
+  ['pMin','pMax'].forEach(function(id){
+    $(id).oninput = function(){
+      if (+$('pMin').value > +$('pMax').value){           // no dejar que se crucen
+        if (id === 'pMin') $('pMax').value = $('pMin').value;
+        else $('pMin').value = $('pMax').value;
+      }
+      $('slider').value = $('pMax').value;
+      sincronizarRango(false); rankingGeneral();
+    };
+  });
+  $('slider').oninput = function(){
+    $('pMax').value = (+this.value).toFixed(2);
+    if (+$('pMin').value > +$('pMax').value) $('pMin').value = $('pMax').value;
+    sincronizarRango(false); rankingGeneral();
+  };
+  $('btnReset').onclick = function(){ sincronizarRango(true); rankingGeneral(); };
+  $('producto').onchange = function(){ sincronizarRango(true); rankingGeneral(); };
+
+  sincronizarRango(true);
+  rankingGeneral();
+})();
+</script>
+</body>
+</html>
