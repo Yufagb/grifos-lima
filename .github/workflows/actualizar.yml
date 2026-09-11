@@ -4,7 +4,12 @@ name: Actualizar precios
 # Funciona sin navegador porque MapaAction.do no exige reCAPTCHA.
 on:
   schedule:
-    - cron: '0 12 * * *'      # 07:00 en Lima (UTC-5), todos los días
+    # Cada 3 horas. La ley no fija una ventana horaria: el Procedimiento PRICE
+    # (RCD Osinergmin N° 256-2021-OS/CD, art. 5) obliga a los grifos a actualizar
+    # su precio "inmediatamente" cuando lo modifican, asi que un cambio puede
+    # ocurrir a cualquier hora. Sondear seguido es lo unico que se le aproxima.
+    # Minuto 17 y no en punto: los cron de GitHub se retrasan en las horas exactas.
+    - cron: '17 */3 * * *'
   workflow_dispatch:           # además, botón para correrlo a mano
 
 permissions:

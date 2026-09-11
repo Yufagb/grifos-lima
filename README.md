@@ -2,8 +2,27 @@
 
 **App en vivo: https://yufagb.github.io/grifos-lima/**
 
-Los precios se actualizan solos cada día a las 07:00 de Lima
+Los precios se actualizan solos cada 3 horas
 ([workflow](.github/workflows/actualizar.yml)). Cada cambio republica el sitio.
+
+## Marco normativo
+
+El **Procedimiento PRICE**, aprobado por Resolución de Consejo Directivo
+**Osinergmin N° 256-2021-OS/CD** (publicada el 27/12/2021, reemplaza a la RCD
+N° 394-2005-OS/CD), rige lo que Facilito publica. Tres artículos importan acá:
+
+- **Art. 5** — el registro de precios «debe ser actualizado **inmediatamente** cuando
+  los precios sean objeto de alguna modificación». No hay ventana horaria ni día fijo:
+  un precio puede cambiar a cualquier hora. Por eso el cron sondea cada 3 horas en vez
+  de una vez al día.
+- **Art. 3** — los agentes registran su lista de precios **sin considerar los descuentos
+  comerciales**. Es decir, el precio de Facilito es el de lista: aplicar encima tu
+  descuento de convenio, que es lo que hace esta app, es lo correcto. Pero ojo: un grifo
+  puede tener promociones propias que tampoco están reflejadas.
+- **Art. 18** — Facilito publica el último precio reportado «hasta por el plazo máximo de
+  **treinta (30) días calendario**». Un grifo que no reporte puede mostrar un precio de
+  hasta un mes atrás. La fecha que ves en la app es cuándo *nosotros* consultamos, no
+  cuándo el grifo fijó ese precio.
 
 
 Datos scrapeados de **Facilito (Osinergmin)** para comparar el precio real que pagas
