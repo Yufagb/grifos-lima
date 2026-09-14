@@ -983,8 +983,8 @@
 
         var hora = new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
         est.innerHTML = cambiados
-          ? '<b>' + cambiados + '</b> grifo(s) cambiaron de precio. En vivo desde las ' + hora + '.'
-          : 'Sin cambios. Verificado en vivo a las ' + hora + '.';
+          ? '<b>' + cambiados + '</b> grifo(s) cambiaron de precio. En vivo desde las ' + hora
+          : 'Sin cambios. Verificado en vivo a las ' + hora;
         $('meta').textContent = estaciones.length + ' grifos · precios en vivo (' + hora + ')';
         sincronizarRango(true);
         rankingGeneral();
