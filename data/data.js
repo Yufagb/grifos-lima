@@ -1,11 +1,11 @@
 // Grifos COESTI/Primax y Repsol — Lima Metropolitana y Callao
 // Fuente: Osinergmin Facilito, endpoint MapaAction.do?method=mostrarMapa (variable listaPuntos).
-// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-13.
+// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-14.
 // [codigoOsinergmin, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel]
 // marca: C = COESTI S.A. (Primax operada), P = Primax afiliada, R = Repsol Comercial S.A.C.
 // zona:  L = Lima Metropolitana, K = Callao.   Precio null = producto no reportado.
 window.FUENTE = "Osinergmin - Facilito (facilito.gob.pe)";
-window.FECHA = "2026-09-13";
+window.FECHA = "2026-09-14";
 window.DESCUENTOS = { C: 1.00, P: 1.00, R: 3.00 };
 window.PRODUCTOS = [
   { id: 7, nombre: "Gasohol Premium" },
@@ -53,8 +53,8 @@ window.DATA = [
 ["18687","C","L","MIRAFLORES","AV. ANDRES AVELINO CACERES N° 120 ESQ. CON AV. RICARDO PALMA",-12.119975,-77.02351,20.19,21.89,24.59],
 ["21052","C","L","LIMA","AV. MARISCAL OSCAR R. BENAVIDES Nº 871 (ANTES: AV. COLONIAL ESQ. AV. TINGO MARIA)",-12.047759,-77.05358,20.59,21.89,24.75],
 ["7170","C","L","LIMA","AV. COLONIAL N° 300 (ANTES AV. OSCAR R. BENAVIDES) ESQUINA CON JR. ASCOPE",-12.046532,-77.0458,20.59,21.89,24.69],
-["147378","C","K","CALLAO","AV. NESTOR GAMBETTA Y AV. LOS ALISOS MZ. A LOTES 06 Y 07 SECCION C PARCELA 2, EX FUNDO OQUENDO KM 8.5 CARRETERA A VENTANILLA",-11.964085,-77.12633,20.15,21.89,24.89],
 ["158979","C","K","CALLAO","AV. NÉSTOR GAMBETTA ESQUINA CALLE Nº 01 MZ A LOTES 01 Y 02 PROGRAMA DE VIVIENDA “ACUARIO”",-11.981011,-77.124756,20.15,21.89,24.89],
+["147378","C","K","CALLAO","AV. NESTOR GAMBETTA Y AV. LOS ALISOS MZ. A LOTES 06 Y 07 SECCION C PARCELA 2, EX FUNDO OQUENDO KM 8.5 CARRETERA A VENTANILLA",-11.964085,-77.12633,20.15,21.89,24.89],
 ["171382","C","K","CALLAO","MZ D. LOTE 1, URB. PROGRESIVA LAS ORQUIDEAS II ETAPA",-11.985128,-77.12203,20.15,21.89,24.89],
 ["9593","C","L","SAN JUAN DE LURIGANCHO","AV. PRÓCERES DE LA INDEPENCIA Nº 104. URB ZARATE",-12.031479,-77.011925,20.85,21.95,24.39],
 ["19980","C","L","SAN LUIS","AV. SAN JUAN N° 895",-12.074983,-77.00141,20.98,21.98,24.89],
