@@ -58,28 +58,34 @@ Luego abre `app/index.html` en el navegador (funciona con doble clic, no necesit
 
 En la app:
 
-**Filtros globales** (afectan mapa y ambas pestañas)
-- Tus descuentos por marca: cambias el número y todo se recalcula.
-- Marcas: Primax / Repsol.
-- Rango de precio con descuento: dos campos más un slider para el tope. Se rebasa solo a los
-  extremos reales de los datos cuando cambias descuentos o marcas.
+**Arriba, siempre a mano:** combustible (Premium / Regular / Diesel), marcas y **↻ Actualizar**,
+que consulta Facilito en vivo a través del Worker de Cloudflare.
 
-**Cerca de mí** — punto de partida por GPS, por búsqueda de lugar o marcando en el mapa.
-Parámetros: radio en km, galones, orden (costo total / precio / distancia) y cuántos mostrar.
-Da una recomendación con su porqué, comparando explícitamente contra el más barato y el más cercano.
+**Cerca de mí** — escribe un lugar, usa ◎ (tu ubicación) o ⌖ (marcar en el mapa) y busca solo.
+Radio, galones y orden (costo total / precio / distancia); cambiarlos rehace la búsqueda.
+Da una recomendación con su porqué, comparando contra el más barato y el más cercano.
 
-**En mi ruta** — A y B, traza la ruta con OSRM y lista los grifos a menos de X metros del camino,
-ordenados por **costo total** (tanqueo + combustible del desvío ida y vuelta). Etiquetas:
-*precio más bajo*, *más cerca de B*, desvío en metros y % del trayecto donde cae el grifo.
+**En mi ruta** — A y B, cada uno con ◎ y ⌖, y botón para invertirlos. Traza la ruta con OSRM y
+lista los grifos a menos del desvío elegido, por **costo total** (tanqueo + combustible del
+desvío ida y vuelta). Etiquetas: *precio más bajo*, *más cerca de B*, desvío y % del trayecto.
 
-**Navegación** — cada grifo trae botones de Google Maps y Waze. Si su ubicación es `exacta` el
-enlace manda coordenadas; si es `aprox` o `distrito` manda el **texto de la dirección**, porque
-el geocoder de Google/Waze la resuelve mejor que el pin geocodificado.
+**Buscador**
+- Busca primero entre los propios grifos (`repsol javier prado`, `primax surquillo`) y luego
+  lugares en OpenStreetMap (Photon → Nominatim), **acotado a Lima y Callao**. Sin ese acote
+  Photon buscaba en todo el mundo.
+- Flechas y Enter para elegir. Si escribes y pulsas buscar sin elegir, toma el primer resultado.
+- ◎ y ⌖ muestran la dirección real (geocodificación inversa), no coordenadas.
+- Negocios pequeños que no están en OpenStreetMap: márcalos con ⌖, o pega tu API key de Google
+  (Places API New) en *Ajustes* — se guarda solo en tu navegador.
 
-**Buscador de lugares** — cadena Photon (OSM, bueno con nombres) → Nominatim (OSM, bueno con calles).
-Encuentra lugares conocidos (Jockey Plaza, Larcomar, clínicas), pero le faltan negocios pequeños que
-no están en OpenStreetMap. Para esos: *Marcar en el mapa*, o pega tu propia API key de Google
-(Places API New) en el desplegable de configuración — se guarda solo en tu navegador.
+**Mapa** — de lejos cada grifo es un punto de color y solo los resultados muestran precio; desde
+zoom 13 aparecen todos. Evita la pila ilegible de 199 etiquetas en la vista de ciudad.
+En el celular el mapa queda fijo arriba y la lista se desplaza por debajo.
+
+**Navegación** — cada grifo trae Google Maps y Waze con las coordenadas oficiales de Osinergmin.
+
+**Ajustes y filtros** (plegado, con resumen visible): descuentos por marca, rango de precio,
+API key de Google y proxy alternativo.
 
 ## Cómo se scrapeó
 
