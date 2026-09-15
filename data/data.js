@@ -1,11 +1,11 @@
 // Grifos COESTI/Primax y Repsol — Lima Metropolitana y Callao
 // Fuente: Osinergmin Facilito, endpoint MapaAction.do?method=mostrarMapa (variable listaPuntos).
-// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-14.
+// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-15.
 // [codigoOsinergmin, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel]
 // marca: C = COESTI S.A. (Primax operada), P = Primax afiliada, R = Repsol Comercial S.A.C.
 // zona:  L = Lima Metropolitana, K = Callao.   Precio null = producto no reportado.
 window.FUENTE = "Osinergmin - Facilito (facilito.gob.pe)";
-window.FECHA = "2026-09-14";
+window.FECHA = "2026-09-15";
 window.DESCUENTOS = { C: 1.00, P: 1.00, R: 3.00 };
 window.PRODUCTOS = [
   { id: 7, nombre: "Gasohol Premium" },
@@ -58,8 +58,8 @@ window.DATA = [
 ["6799","C","L","PUENTE PIEDRA","AV. LEONCIO PRADO N° 780 (PANAMERICANA NORTE KM. 34.5)",-11.841835,-77.10399,20.19,21.99,25.59],
 ["14637","C","L","COMAS","ESQUINA DE LA AV. UNIVERSITARIA Y AV. MEXICO CALLE L, MZ. D, LOTE 34, 35 Y 36 URB. SANTA ISOLINA 2DA ETAPA",-11.95587,-77.05948,20.45,21.99,25.55],
 ["19945","C","L","LIMA","AV. OSCAR R. BENAVIDES N° 1380",-12.0479,-77.0594,20.69,21.99,24.99],
-["171382","C","K","CALLAO","MZ D. LOTE 1, URB. PROGRESIVA LAS ORQUIDEAS II ETAPA",-11.985128,-77.12203,20.25,21.99,24.99],
 ["9588","C","K","CALLAO","AV. ARGENTINA N° 4247",-12.048769,-77.1006,20.29,21.99,25.49],
+["171382","C","K","CALLAO","MZ D. LOTE 1, URB. PROGRESIVA LAS ORQUIDEAS II ETAPA",-11.985128,-77.12203,20.25,21.99,24.99],
 ["8065","C","L","VILLA EL SALVADOR","AV. MATEO PUMACAHUA S/N. MZ. D, LOTE 1",-12.1931,-76.96426,20.95,22.09,24.35],
 ["16805","C","L","SANTIAGO DE SURCO","AV. SANTIAGO DE SURCO CON AV. LOS PROCERES",-12.148054,-76.98665,20.35,22.09,25.19],
 ["7309","C","L","SAN MARTIN DE PORRES","MZ. B, LT. 5 Y 15, URB. VILLA UNIVERSITARIA",-11.995721,-77.084946,21.09,22.09,24.79],
