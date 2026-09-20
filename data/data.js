@@ -1,11 +1,11 @@
 // Grifos COESTI/Primax y Repsol — Lima Metropolitana y Callao
 // Fuente: Osinergmin Facilito, endpoint MapaAction.do?method=mostrarMapa (variable listaPuntos).
-// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-19.
+// Coordenadas y precios OFICIALES del propio Osinergmin. Consultado 2026-09-20.
 // [codigoOsinergmin, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel]
 // marca: C = COESTI S.A. (Primax operada), P = Primax afiliada, R = Repsol Comercial S.A.C.
 // zona:  L = Lima Metropolitana, K = Callao.   Precio null = producto no reportado.
 window.FUENTE = "Osinergmin - Facilito (facilito.gob.pe)";
-window.FECHA = "2026-09-19";
+window.FECHA = "2026-09-20";
 window.DESCUENTOS = { C: 1.00, P: 1.00, R: 3.00 };
 window.PRODUCTOS = [
   { id: 7, nombre: "Gasohol Premium" },
@@ -163,8 +163,8 @@ window.DATA = [
 ["16639","R","L","ATE","AV. NICOLAS AYLLON N° 2970",-12.058014,-76.971306,22.49,23.99,26.49],
 ["16775","R","L","ATE","AV. NICOLAS AYLLON Nº 1912",-12.064293,-76.98664,22.49,23.99,26.99],
 ["16600","R","L","LIMA","AV. UNIVERSITARIA SUR N° 546, CON FRENTE CALLE MATERIALES N° 156",-12.042032,-77.07727,21.99,23.99,26.49],
-["9531","R","K","CALLAO","AV. CORONEL NESTOR GAMBETTA N° 10548",-11.941226,-77.13078,21.99,23.99,26.99],
 ["15211","R","K","CALLAO","AV. TOMAS VALLE, ESQ. CON AV. LOS DOMINICOS - URB. JORGE CHAVEZ",-12.014078,-77.09527,21.99,23.99,26.99],
+["9531","R","K","CALLAO","AV. CORONEL NESTOR GAMBETTA N° 10548",-11.941226,-77.13078,21.99,23.99,26.99],
 ["6765","C","L","SAN ISIDRO","AV. REPUBLICA DE COLOMBIA N° 105-109",-12.098619,-77.03222,22.29,24.09,25.89],
 ["123805","C","L","PUENTE PIEDRA","AV. INDUSTRIAL, MZ. F LOTE 5, ESQUINA AV. SAN JUAN, URB. LAS VEGAS",-11.863831,-77.06725,22.69,24.29,26.79],
 ["64257","C","K","CALLAO","ESQ. AV. QUILCA CON CALLE 10 - URB. SAN ALFONSO SANTA IRENE, MZ. A, LT. 01 Y 02",-12.030923,-77.0954,21.65,24.29,26.39],
