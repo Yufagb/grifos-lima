@@ -1,4 +1,4 @@
-# Precios de combustible — Lima y Callao (Primax vs Repsol)
+# Precios de combustible — Lima y Callao (Primax, Repsol y AVA)
 
 **App en vivo: https://yufagb.github.io/grifos-lima/**
 
@@ -32,10 +32,27 @@ aplicando tus descuentos de convenio.
 |---|---|
 | Primax / COESTI | S/ 1.00 por galón (deducido de tus últimos 4 consumos) |
 | Repsol | S/ 3.00 por galón |
+| AVA | S/ 0.00 — sin convenio (ver promociones abajo) |
+
+### AVA no tiene convenio, pero sí promociones
+
+AVA es la marca de **GLOBAL FUEL S.A.** (23 estaciones en Lima y Callao). No hay un descuento
+permanente como el tuyo en Primax o Repsol, pero sí campañas:
+
+- **PLIN** — S/ 2.00 por galón en Regular y Premium, del 01/09/2026 al 31/12/2026 o hasta agotar
+  el fondo promocional de S/ 12 000. Hay que pedirla en caja **antes** de pagar y pagar escaneando
+  el QR con PLIN; máximo una por orden y por usuario, no acumulable.
+- **Club El Comercio** — S/ 1.50 por galón en Premium y S/ 1.00 en Regular y Diesel, con cupón
+  desde la web o app del club más DNI. Solo para suscriptores activos.
+
+En la app, el campo *AVA* de **Ajustes** viene en 0.00; ponle 2.00 si vas a pagar con PLIN.
+Aun así, con los precios actuales AVA queda cara: mediana de Premium S/ 23.99 de lista, contra
+S/ 22.89 de Primax y S/ 24.49 de Repsol. Con PLIN baja a S/ 21.99, todavía por encima de lo que
+pagas en Repsol (S/ 21.49) con tu convenio.
 
 ## Archivos
 
-- `data/data.js` — los 199 grifos COESTI/Primax y Repsol de Lima Metropolitana y Callao,
+- `data/data.js` — los 222 grifos COESTI/Primax, Repsol y AVA de Lima Metropolitana y Callao,
   con **coordenadas oficiales de Osinergmin** y los tres productos (Regular, Premium, Diesel B5 S-50).
 - `data/premium-lima-callao.csv` — tabla final: precio de lista, descuento, precio final,
   coordenadas y código Osinergmin de cada grifo.
@@ -130,6 +147,8 @@ mientras `MapaAction` esté disponible.
 - Los precios son los que cada grifo declara a Osinergmin; pueden estar desactualizados
   respecto al surtidor.
 - Un par de grifos no reportan alguno de los tres productos; en la app desaparecen del mapa
-  al seleccionar ese combustible (199 en Premium, 198 en Regular y Diesel).
-- Se incluyen solo estaciones operadas por COESTI S.A. / Repsol Comercial S.A.C. y dos afiliadas
-  Primax. Si tu convenio no aplica en afiliadas, filtra por marca `COESTI (Primax)`.
+  al seleccionar ese combustible.
+- Se incluyen las estaciones de COESTI S.A. (Primax), Repsol Comercial S.A.C., GLOBAL FUEL S.A.
+  (AVA) y dos afiliadas Primax. Si tu convenio no aplica en afiliadas, filtra por marca.
+- El distrito no viene en `MapaAction.do`. Para grifos que aún no estaban en `data.js` se resolvió
+  con geocodificación inversa y se revisó a mano; queda guardado en `data/distritos-extra.json`.

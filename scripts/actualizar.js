@@ -15,11 +15,14 @@ const PROVINCIAS = [
   { dep: '70000',  prov: '70100',  zona: 'K' }    // Prov. Const. del Callao
 ];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36';
-const NUESTROS = /COESTI|PRIMAX|REPSOL COMERCIAL/i;
+// AVA es la marca de GLOBAL FUEL S.A.; en Facilito casi todas sus estaciones
+// figuran con esa razon social y solo una como "AVA ARAMBURU".
+const NUESTROS = /COESTI|PRIMAX|REPSOL COMERCIAL|GLOBAL FUEL|\bAVA\b/i;
 
 function marca(unidad) {
   if (/COESTI/i.test(unidad)) return 'C';
   if (/REPSOL COMERCIAL/i.test(unidad)) return 'R';
+  if (/GLOBAL FUEL|\bAVA\b/i.test(unidad)) return 'A';
   return 'P';
 }
 
@@ -53,12 +56,19 @@ function precio(p, re) {
 }
 
 function distritosGuardados() {
-  if (!fs.existsSync(ARCHIVO)) return {};
+  const previo = {};
+  // respaldo para grifos que aun no estan en data.js (ver data/distritos-extra.json)
+  const extra = path.join(ROOT, 'data', 'distritos-extra.json');
+  if (fs.existsSync(extra)) {
+    const j = JSON.parse(fs.readFileSync(extra, 'utf8'));
+    Object.keys(j).forEach(k => { if (!k.startsWith('_')) previo[k] = j[k]; });
+  }
+  if (!fs.existsSync(ARCHIVO)) return previo;
   global.window = {};
   delete require.cache[require.resolve(ARCHIVO)];
   require(ARCHIVO);
-  const previo = {};
-  (global.window.DATA || []).forEach(r => { previo[r[0]] = r[3]; });
+  // lo ya guardado manda sobre el respaldo
+  (global.window.DATA || []).forEach(r => { if (r[3] && r[3] !== '(nuevo)') previo[r[0]] = r[3]; });
   return previo;
 }
 

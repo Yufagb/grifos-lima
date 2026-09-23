@@ -8,7 +8,7 @@ global.window = {};
 require(path.join(ROOT, 'data', 'data.js'));
 const { DATA, DESCUENTOS } = global.window;
 
-const MARCA = { C: 'COESTI (Primax)', P: 'Primax afiliada', R: 'Repsol' };
+const MARCA = { C: 'COESTI (Primax)', P: 'Primax afiliada', R: 'Repsol', A: 'AVA (Global Fuel)' };
 const ZONA = { L: 'LIMA', K: 'CALLAO' };
 const PREMIUM = 8, REGULAR = 7, DIESEL = 9;
 
@@ -39,17 +39,25 @@ const stat = arr => {
     prom: +(p.reduce((s, x) => s + x, 0) / p.length).toFixed(2), max: p[p.length - 1]
   };
 };
-const prim = rows.filter(r => r.m !== 'R');
-const reps = rows.filter(r => r.m === 'R');
+// tres cadenas: antes se agrupaba "todo lo que no es Repsol" y AVA caia dentro de Primax
+const GRUPOS = [
+  { nombre: 'Primax', filtro: r => r.m === 'C' || r.m === 'P', dsc: DESCUENTOS.C },
+  { nombre: 'Repsol', filtro: r => r.m === 'R', dsc: DESCUENTOS.R },
+  { nombre: 'AVA   ', filtro: r => r.m === 'A', dsc: DESCUENTOS.A }
+];
 const promLista = arr => +(arr.reduce((s, r) => s + r.premium, 0) / arr.length).toFixed(2);
 
 console.log('grifos:', rows.length, '| todos con coordenadas oficiales de Osinergmin');
 console.log('\nPREMIUM — PRECIO DE LISTA');
-console.log('  Primax  prom', promLista(prim), ' min', Math.min(...prim.map(r => r.premium)));
-console.log('  Repsol  prom', promLista(reps), ' min', Math.min(...reps.map(r => r.premium)));
-console.log('\nPREMIUM — CON TU DESCUENTO (Primax -' + DESCUENTOS.C + ' / Repsol -' + DESCUENTOS.R + ')');
-console.log('  Primax ', JSON.stringify(stat(prim)));
-console.log('  Repsol ', JSON.stringify(stat(reps)));
+GRUPOS.forEach(g => {
+  const a = rows.filter(g.filtro);
+  if (a.length) console.log('  ' + g.nombre + '  prom', promLista(a), ' min', Math.min(...a.map(r => r.premium)));
+});
+console.log('\nPREMIUM — CON TU DESCUENTO');
+GRUPOS.forEach(g => {
+  const a = rows.filter(g.filtro);
+  if (a.length) console.log('  ' + g.nombre + ' (−' + g.dsc.toFixed(2) + ')', JSON.stringify(stat(a)));
+});
 
 console.log('\nTOP 10 MAS BARATOS CON DESCUENTO');
 rows.slice(0, 10).forEach((r, k) => console.log(

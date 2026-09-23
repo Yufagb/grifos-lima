@@ -8,7 +8,7 @@ global.window = {};
 require(path.join(ROOT, 'data', 'data.js'));
 const { DATA, DESCUENTOS, FECHA } = global.window;
 
-const MARCA = { C: 'Primax', P: 'Primax', R: 'Repsol' };
+const MARCA = { C: 'Primax', P: 'Primax', R: 'Repsol', A: 'AVA' };
 const ZONA = { L: 'Lima', K: 'Callao' };
 const REGULAR = 7, PREMIUM = 8, DIESEL = 9;
 

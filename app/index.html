@@ -156,6 +156,7 @@
       <div class="chips">
         <span class="chip" id="chipC" role="button" aria-pressed="true">Primax</span>
         <span class="chip" id="chipR" role="button" aria-pressed="true">Repsol</span>
+        <span class="chip" id="chipA" role="button" aria-pressed="true">AVA</span>
       </div>
     </div>
 
@@ -230,7 +231,12 @@
           <div class="row">
             <div><label for="dC">Primax</label><input type="number" id="dC" step="0.01" value="1.00" inputmode="decimal"></div>
             <div><label for="dR">Repsol</label><input type="number" id="dR" step="0.01" value="3.00" inputmode="decimal"></div>
+            <div><label for="dA">AVA</label><input type="number" id="dA" step="0.01" value="0.00" inputmode="decimal"></div>
           </div>
+          <p class="hint">En AVA no tienes convenio, pero sí hay promociones: pagando con
+            <b>PLIN</b> descuentan S/ 2.00 por galón en Regular y Premium (01 set – 31 dic 2026,
+            hay que pedirla en caja <i>antes</i> de pagar, 1 por orden y hasta agotar fondo).
+            Si la usas, pon 2.00 aquí.</p>
         </fieldset>
         <fieldset>
           <legend>Rango de precio (con descuento)</legend>
@@ -267,9 +273,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
-  var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol'};
-  var MARCA_CORTA = {C:'Primax', P:'Primax', R:'Repsol'};
-  var COLOR = {C:'#f26722', P:'#f26722', R:'#2f5fd0'};
+  var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol', A:'AVA (Global Fuel)'};
+  var MARCA_CORTA = {C:'Primax', P:'Primax', R:'Repsol', A:'AVA'};
+  var COLOR = {C:'#f26722', P:'#f26722', R:'#2f5fd0', A:'#0a9396'};
   var ZONA  = {L:'Lima', K:'Callao'};
   var KM_POR_GALON = 38;   // rendimiento supuesto para costear el viaje
   var FACTOR_VIA = 1.35;   // linea recta -> distancia por calle, aproximado
@@ -297,13 +303,12 @@
   var col = function(){ return +$('producto').value; };
   var nombreProducto = function(){ return $('producto').selectedOptions[0].text; };
 
-  var desc = function(m){ return m === 'R' ? +$('dR').value : +$('dC').value; };
+  var CAMPO = {C:'dC', P:'dC', R:'dR', A:'dA'};   // campo de descuento por marca
+  var CHIP  = {C:'chipC', P:'chipC', R:'chipR', A:'chipA'};
+  var desc = function(m){ return +$(CAMPO[m]).value || 0; };
   var lista = function(e){ return e.precios[col()]; };
   var fin   = function(e){ var p = lista(e); return p == null ? null : +(p - desc(e.m)).toFixed(2); };
-  var marcaOn = function(e){
-    return e.m === 'R' ? $('chipR').getAttribute('aria-pressed') === 'true'
-                       : $('chipC').getAttribute('aria-pressed') === 'true';
-  };
+  var marcaOn = function(e){ return $(CHIP[e.m]).getAttribute('aria-pressed') === 'true'; };
   var visible = function(e){
     if (!marcaOn(e)) return false;
     if (lista(e) == null) return false;          // no reporta este combustible
@@ -336,7 +341,8 @@
   }
   // la cabecera plegada de ajustes dice qué está activo, para no tener que abrirla
   function resumirAjustes(r){
-    var partes = ['Primax −' + (+$('dC').value).toFixed(2), 'Repsol −' + (+$('dR').value).toFixed(2)];
+    var partes = ['Primax −' + (+$('dC').value).toFixed(2), 'Repsol −' + (+$('dR').value).toFixed(2),
+                  'AVA −' + (+$('dA').value).toFixed(2)];
     if (r && (+$('pMin').value > r.lo + 0.001 || +$('pMax').value < r.hi - 0.001)) {
       partes.push('precio S/ ' + (+$('pMin').value).toFixed(2) + '–' + (+$('pMax').value).toFixed(2));
     }
@@ -362,8 +368,11 @@
   var leyenda = L.control({position:'bottomright'});
   leyenda.onAdd = function(){
     var d = L.DomUtil.create('div','legend');
-    d.innerHTML = '<div><span style="width:10px;height:10px;border-radius:50%;background:#f26722;display:inline-block"></span> Primax</div>' +
-                  '<div><span style="width:10px;height:10px;border-radius:50%;background:#2f5fd0;display:inline-block"></span> Repsol</div>' +
+    var punto = function(c){ return '<span style="width:10px;height:10px;border-radius:50%;background:' +
+      c + ';display:inline-block"></span> '; };
+    d.innerHTML = '<div>' + punto(COLOR.C) + 'Primax</div>' +
+                  '<div>' + punto(COLOR.R) + 'Repsol</div>' +
+                  '<div>' + punto(COLOR.A) + 'AVA</div>' +
                   '<div style="opacity:.7;margin-top:4px">Acércate para ver todos los precios</div>';
     return d;
   };
@@ -1046,13 +1055,13 @@
   ['radio','orden'].forEach(function(id){ $(id).onchange = function(){ if (puntos.cerca) buscarCerca(); }; });
   $('desvio').onchange = function(){ if (puntos.A && puntos.B) buscarRuta(); };
 
-  ['chipC','chipR'].forEach(function(id){
+  ['chipC','chipR','chipA'].forEach(function(id){
     $(id).onclick = function(){
       this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
       sincronizarRango(true); rankingGeneral();
     };
   });
-  ['dC','dR'].forEach(function(id){
+  ['dC','dR','dA'].forEach(function(id){
     $(id).oninput = function(){ sincronizarRango(true); rankingGeneral(); };
   });
 
