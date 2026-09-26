@@ -8,13 +8,14 @@ global.window = {};
 require(path.join(ROOT, 'data', 'data.js'));
 const { DATA, DESCUENTOS } = global.window;
 
-const MARCA = { C: 'COESTI (Primax)', P: 'Primax afiliada', R: 'Repsol', A: 'AVA (Global Fuel)' };
+const MARCA = { C: 'COESTI (Primax)', P: 'Primax afiliada', R: 'Repsol', A: 'AVA (Global Fuel)',
+                I: 'Independiente' };
 const ZONA = { L: 'LIMA', K: 'CALLAO' };
 const PREMIUM = 8, REGULAR = 7, DIESEL = 9;
 
 const rows = DATA
   .map(r => ({
-    cod: r[0], m: r[1], z: r[2], distrito: r[3], dir: r[4], lat: r[5], lon: r[6],
+    cod: r[0], m: r[1], z: r[2], distrito: r[3], dir: r[4], lat: r[5], lon: r[6], razon: r[10] || '',
     regular: r[REGULAR], premium: r[PREMIUM], diesel: r[DIESEL],
     final: r[PREMIUM] == null ? null : +(r[PREMIUM] - DESCUENTOS[r[1]]).toFixed(2)
   }))
@@ -22,9 +23,9 @@ const rows = DATA
   .sort((a, b) => a.final - b.final);
 
 const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
-const csv = ['codigo_osinergmin,marca,zona,distrito,direccion,lat,lon,premium_lista,descuento,premium_final,regular_lista,diesel_lista']
+const csv = ['codigo_osinergmin,marca,razon_social,zona,distrito,direccion,lat,lon,premium_lista,descuento,premium_final,regular_lista,diesel_lista']
   .concat(rows.map(r => [
-    r.cod, MARCA[r.m], ZONA[r.z], r.distrito, r.dir, r.lat, r.lon,
+    r.cod, MARCA[r.m], r.razon, ZONA[r.z], r.distrito, r.dir, r.lat, r.lon,
     r.premium, DESCUENTOS[r.m], r.final, r.regular, r.diesel
   ].map(q).join(',')))
   .join('\n');
@@ -43,7 +44,8 @@ const stat = arr => {
 const GRUPOS = [
   { nombre: 'Primax', filtro: r => r.m === 'C' || r.m === 'P', dsc: DESCUENTOS.C },
   { nombre: 'Repsol', filtro: r => r.m === 'R', dsc: DESCUENTOS.R },
-  { nombre: 'AVA   ', filtro: r => r.m === 'A', dsc: DESCUENTOS.A }
+  { nombre: 'AVA   ', filtro: r => r.m === 'A', dsc: DESCUENTOS.A },
+  { nombre: 'Indep.', filtro: r => r.m === 'I', dsc: DESCUENTOS.I }
 ];
 const promLista = arr => +(arr.reduce((s, r) => s + r.premium, 0) / arr.length).toFixed(2);
 

@@ -44,8 +44,8 @@
   button.mini{padding:6px 9px;font-size:12px}
   button:disabled{opacity:.5;cursor:default}
 
-  .rapida{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-  .rapida select{flex:1}
+  .rapida{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+  .rapida select{flex:1 1 100%}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);
     background:var(--bg);cursor:pointer;user-select:none;white-space:nowrap}
@@ -89,6 +89,8 @@
   .tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:5px;
     background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-top:5px}
   .tag.win{background:var(--good);border-color:var(--good);color:#fff}
+  .tag.ind{border-color:#8a94a6;color:#8a94a6}
+  .tag.ojo{border-color:var(--warn);color:var(--warn);font-weight:600}
   .ir{display:flex;gap:6px;margin-top:8px}
   .ir a{flex:1;text-align:center;text-decoration:none;font-size:11.5px;font-weight:600;
     padding:6px;border-radius:7px;border:1px solid var(--line);color:var(--ink);background:var(--bg)}
@@ -157,6 +159,7 @@
         <span class="chip" id="chipC" role="button" aria-pressed="true">Primax</span>
         <span class="chip" id="chipR" role="button" aria-pressed="true">Repsol</span>
         <span class="chip" id="chipA" role="button" aria-pressed="true">AVA</span>
+        <span class="chip" id="chipI" role="button" aria-pressed="false">Independientes</span>
       </div>
     </div>
 
@@ -273,9 +276,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
-  var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol', A:'AVA (Global Fuel)'};
-  var MARCA_CORTA = {C:'Primax', P:'Primax', R:'Repsol', A:'AVA'};
-  var COLOR = {C:'#f26722', P:'#f26722', R:'#2f5fd0', A:'#0a9396'};
+  var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol', A:'AVA (Global Fuel)',
+               I:'Independiente'};
+  var MARCA_CORTA = {C:'Primax', P:'Primax', R:'Repsol', A:'AVA', I:'Independiente'};
+  var COLOR = {C:'#f26722', P:'#f26722', R:'#2f5fd0', A:'#0a9396', I:'#8a94a6'};
+  var CADENA = {C:true, P:true, R:true, A:true, I:false};   // operacion con control de marca
   var ZONA  = {L:'Lima', K:'Callao'};
   var KM_POR_GALON = 38;   // rendimiento supuesto para costear el viaje
   var FACTOR_VIA = 1.35;   // linea recta -> distancia por calle, aproximado
@@ -294,18 +299,30 @@
   };
   var esMovil = function(){ return window.matchMedia('(max-width:900px)').matches; };
 
-  // [codigo, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel]
+  // [codigo, marca, zona, distrito, direccion, lat, lon, regular, premium, diesel, razonSocial]
   var estaciones = window.DATA.map(function(r,i){
     return {i:i, cod:r[0], m:r[1], z:r[2], distrito:r[3], dir:r[4],
-            lat:r[5], lon:r[6], precios:{7:r[7], 8:r[8], 9:r[9]},
-            texto: sinTildes(MARCA[r[1]] + ' ' + r[4] + ' ' + r[3])};
+            lat:r[5], lon:r[6], precios:{7:r[7], 8:r[8], 9:r[9]}, razon:r[10] || '',
+            texto: sinTildes(MARCA[r[1]] + ' ' + (r[10]||'') + ' ' + r[4] + ' ' + r[3])};
   });
   var col = function(){ return +$('producto').value; };
   var nombreProducto = function(){ return $('producto').selectedOptions[0].text; };
 
-  var CAMPO = {C:'dC', P:'dC', R:'dR', A:'dA'};   // campo de descuento por marca
-  var CHIP  = {C:'chipC', P:'chipC', R:'chipR', A:'chipA'};
-  var desc = function(m){ return +$(CAMPO[m]).value || 0; };
+  var CAMPO = {C:'dC', P:'dC', R:'dR', A:'dA', I:null};   // campo de descuento por marca
+  var CHIP  = {C:'chipC', P:'chipC', R:'chipR', A:'chipA', I:'chipI'};
+  var desc = function(m){ return CAMPO[m] ? (+$(CAMPO[m]).value || 0) : 0; };
+
+  // Un precio muy por debajo del mercado no prueba nada, pero es la señal clasica
+  // de que algo no cuadra (menos octanaje, adulteracion, surtidor mal calibrado).
+  var UMBRAL = 0.92;
+  var medianaMercado = function(){
+    var v = estaciones.map(lista).filter(function(p){ return p != null; }).sort(function(a,b){ return a-b; });
+    return v.length ? v[Math.floor(v.length/2)] : null;
+  };
+  var sospechoso = function(e){
+    var med = medianaMercado(), p = lista(e);
+    return med != null && p != null && p < med * UMBRAL;
+  };
   var lista = function(e){ return e.precios[col()]; };
   var fin   = function(e){ var p = lista(e); return p == null ? null : +(p - desc(e.m)).toFixed(2); };
   var marcaOn = function(e){ return $(CHIP[e.m]).getAttribute('aria-pressed') === 'true'; };
@@ -373,6 +390,7 @@
     d.innerHTML = '<div>' + punto(COLOR.C) + 'Primax</div>' +
                   '<div>' + punto(COLOR.R) + 'Repsol</div>' +
                   '<div>' + punto(COLOR.A) + 'AVA</div>' +
+                  '<div>' + punto(COLOR.I) + 'Independiente</div>' +
                   '<div style="opacity:.7;margin-top:4px">Acércate para ver todos los precios</div>';
     return d;
   };
@@ -393,10 +411,10 @@
   }
   function prioridad(e){ return pines.destacar[e.i] ? 1000 : pines.etiquetar[e.i] ? 500 : 0; }
   function popup(e){
-    return '<b>'+MARCA[e.m]+'</b><br>'+esc(e.dir)+'<br>'+esc(e.distrito)+', '+ZONA[e.z]+
+    return '<b>'+titulo(e)+'</b><br>'+esc(e.dir)+'<br>'+esc(e.distrito)+(e.distrito?', ':'')+ZONA[e.z]+
       '<br>'+nombreProducto()+' — lista S/ '+lista(e).toFixed(2)+
-      ' &nbsp; <b>con descuento: S/ '+fin(e).toFixed(2)+'</b>'+
-      '<br><small>Código Osinergmin '+e.cod+'</small>'+ enlaces(e);
+      ' &nbsp; <b>con descuento: S/ '+fin(e).toFixed(2)+'</b><br>'+ insignias(e) +
+      '<small>Código Osinergmin '+e.cod+'</small>'+ enlaces(e);
   }
   function aConjunto(arr){ var o = {}; (arr||[]).forEach(function(i){ o[i] = true; }); return o; }
   function dibujar(destacar, etiquetar){
@@ -455,7 +473,8 @@
     return estaciones.filter(function(e){
       return lista(e) != null && tokens.every(function(t){ return e.texto.indexOf(t) >= 0; });
     }).slice(0, 4).map(function(e){
-      return {nombre: MARCA_CORTA[e.m] + ' · S/ ' + fin(e).toFixed(2), detalle: e.dir + ', ' + e.distrito,
+      var quien = CADENA[e.m] ? MARCA_CORTA[e.m] : (e.razon || 'Independiente');
+      return {nombre: quien + ' · S/ ' + fin(e).toFixed(2), detalle: e.dir + ', ' + e.distrito,
               lat: e.lat, lon: e.lon, src: 'grifo', grifo: e};
     });
   }
@@ -707,13 +726,26 @@
   }
 
   // ---------------- tarjetas ----------------
+  // En cadena manda la marca; en un independiente lo util es su razon social,
+  // que es lo unico que Facilito publica para identificarlo.
+  function titulo(e){
+    return CADENA[e.m] ? MARCA[e.m] : esc(e.razon || 'Grifo independiente');
+  }
+  function insignias(e){
+    var s = '';
+    if (!CADENA[e.m]) s += '<span class="tag ind">independiente</span> ';
+    if (sospechoso(e)) s += '<span class="tag ojo">precio muy por debajo del mercado</span> ';
+    return s;
+  }
+
   function tarjeta(e, extra, best){
     var div = document.createElement('div');
     div.className = 'card' + (best ? ' best' : '');
     div.innerHTML =
       '<span class="price">S/ '+fin(e).toFixed(2)+'<small>lista '+lista(e).toFixed(2)+'</small></span>' +
-      '<h3><span class="dot" style="background:'+COLOR[e.m]+'"></span>'+MARCA[e.m]+'</h3>' +
-      '<p>'+esc(e.dir)+'</p><p>'+esc(e.distrito)+', '+ZONA[e.z]+'</p>' + (extra || '') + enlaces(e);
+      '<h3><span class="dot" style="background:'+COLOR[e.m]+'"></span>'+titulo(e)+'</h3>' +
+      '<p>'+esc(e.dir)+'</p><p>'+esc(e.distrito)+(e.distrito?', ':'')+ZONA[e.z]+'</p>' +
+      insignias(e) + (extra || '') + enlaces(e);
     activar(div, e);
     return div;
   }
@@ -721,7 +753,7 @@
     var div = document.createElement('div');
     div.className = 'reco';
     div.innerHTML = '<div class="kicker">'+titulo+'</div>' +
-      '<h2>'+MARCA[e.m]+' — S/ '+fin(e).toFixed(2)+'/gal</h2>' +
+      '<h2>'+titulo(e)+' — S/ '+fin(e).toFixed(2)+'/gal</h2>' +
       '<p style="font-size:11px">'+nombreProducto()+'</p>' +
       '<p>'+esc(e.dir)+' · '+esc(e.distrito)+'</p>' +
       '<div class="why">'+porque+'</div>' + (extra||'') + enlaces(e);
@@ -1055,7 +1087,7 @@
   ['radio','orden'].forEach(function(id){ $(id).onchange = function(){ if (puntos.cerca) buscarCerca(); }; });
   $('desvio').onchange = function(){ if (puntos.A && puntos.B) buscarRuta(); };
 
-  ['chipC','chipR','chipA'].forEach(function(id){
+  ['chipC','chipR','chipA','chipI'].forEach(function(id){
     $(id).onclick = function(){
       this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
       sincronizarRango(true); rankingGeneral();

@@ -99,6 +99,20 @@ desvío ida y vuelta). Etiquetas: *precio más bajo*, *más cerca de B*, desvío
 zoom 13 aparecen todos. Evita la pila ilegible de 199 etiquetas en la vista de ciudad.
 En el celular el mapa queda fijo arriba y la lista se desplaza por debajo.
 
+**Cadenas e independientes** — la app trae los **791 grifos** de Lima y Callao. Por defecto muestra
+solo los 222 de cadena (Primax, Repsol, AVA), que operan con control de marca; el chip
+*Independientes* enciende los otros 569.
+
+Un independiente aparece con su **razón social**, que es lo único que Facilito publica para
+identificarlo: ahí están los afiliados a Petroperú y a otras banderas, porque **Facilito no
+publica la marca del letrero**, solo el operador.
+
+**Señal de precio atípico** — un grifo cuyo precio está más de 8 % por debajo de la mediana del
+mercado se marca con *precio muy por debajo del mercado*. No prueba nada, pero es la señal clásica
+de que algo no cuadra (menos octanaje, adulteración, surtidor descalibrado). Hoy son 6 grifos,
+todos independientes. Osinergmin **no publica sanciones ni resultados de calidad por grifo**:
+lo único que hay es la línea de denuncia 0800-41800.
+
 **Navegación** — cada grifo trae Google Maps y Waze con las coordenadas oficiales de Osinergmin.
 
 **Ajustes y filtros** (plegado, con resumen visible): descuentos por marca, rango de precio,
