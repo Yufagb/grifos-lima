@@ -30,9 +30,21 @@ async function bajarProvincia({ dep, prov, zona }) {
   const url = 'https://www.facilito.gob.pe/facilito/actions/MapaAction.do' +
     `?departamento=${dep}&provincia=${prov}&distrito=9999999&producto=127` +
     '&method=mostrarMapa&subtitulocabecera=1&tipo=LIQ&codigoOSI=0';
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!res.ok) throw new Error(`${prov}: HTTP ${res.status}`);
-  const html = new TextDecoder('windows-1252').decode(await res.arrayBuffer());
+  // Facilito corta la conexion cada tanto: el cron fallo asi el 26/09/2026.
+  // Tres intentos con espera creciente antes de darlo por perdido.
+  let html;
+  for (let intento = 1; ; intento++) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      html = new TextDecoder('windows-1252').decode(await res.arrayBuffer());
+      break;
+    } catch (e) {
+      if (intento >= 3) throw new Error(`${prov}: ${e.message} (tras ${intento} intentos)`);
+      console.log(`  ${prov}: ${e.message}, reintento ${intento + 1} de 3...`);
+      await new Promise(r => setTimeout(r, 3000 * intento));
+    }
+  }
 
   // Los datos viajan como  var listaPuntos = eval ('(' + '[...]' + ')')
   const i = html.indexOf('listaPuntos');
