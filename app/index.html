@@ -272,10 +272,24 @@
   </main>
 </div>
 
-<script src="../data/data.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-(function(){
+  // data.js cambia varias veces al dia. Sin versionar, el navegador servia datos
+  // viejos junto a un index.html nuevo (y con otro numero de columnas).
+  // El bucket de 10 minutos deja cachear sin quedarse atras.
+  (function(){
+    var s = document.createElement('script');
+    s.src = '../data/data.js?v=' + Math.floor(Date.now() / 600000);
+    s.onload = function(){ window.iniciarApp(); };
+    s.onerror = function(){
+      document.getElementById('lista').innerHTML =
+        '<p class="err">No pude cargar los precios. Revisa tu conexión y recarga.</p>';
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+<script>
+window.iniciarApp = function(){
   var MARCA = {C:'Primax (COESTI)', P:'Primax afiliada', R:'Repsol', A:'AVA (Global Fuel)',
                I:'Independiente'};
   var MARCA_CORTA = {C:'Primax', P:'Primax', R:'Repsol', A:'AVA', I:'Independiente'};
@@ -1117,7 +1131,7 @@
 
   sincronizarRango(true);
   rankingGeneral();
-})();
+};
 </script>
 </body>
 </html>
