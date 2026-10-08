@@ -120,6 +120,31 @@ function distritosGuardados() {
   }
   console.log(`  distritos: ${vistos} grifos ubicados`);
 
+  // Facilito no indexa todos los grifos por distrito: Pueblo Libre (150121) devuelve 0,
+  // y un grifo que desaparece un rato de Facilito pierde el distrito recordado.
+  // Respaldo: geocodificacion inversa, aceptada solo si cae en un distrito conocido.
+  // Maximo 15 por corrida para respetar el limite de Nominatim (1 por segundo).
+  const sinTilde = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+  const conocidos = {};
+  Object.values(DISTRITOS).forEach(d => d.nombres.forEach(n => { conocidos[sinTilde(n)] = n; }));
+  const pendientes = puntos.filter(p => !distrito[p.codigoOsinergmin]).slice(0, 15);
+  for (const p of pendientes) {
+    try {
+      await new Promise(r => setTimeout(r, 1200));
+      const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14' +
+        `&lat=${p.latitud}&lon=${p.longitud}`,
+        { headers: { 'User-Agent': 'grifos-lima/1.0 (github.com/Yufagb/grifos-lima)', 'Accept-Language': 'es' } });
+      const a = (await res.json()).address || {};
+      const nombre = sinTilde(a.city_district || a.suburb || a.town || a.city || '')
+        .replace(/^CERCADO DE LIMA$/, 'LIMA');
+      if (conocidos[nombre]) distrito[p.codigoOsinergmin] = conocidos[nombre];
+    } catch (e) { /* queda sin distrito: la app muestra solo la zona */ }
+  }
+  if (pendientes.length) {
+    const ok = pendientes.filter(p => distrito[p.codigoOsinergmin]).length;
+    console.log(`  geocodificacion inversa: ${ok} de ${pendientes.length} resueltos`);
+  }
+
   const sinDistrito = [];
   const filas = puntos.map(p => {
     const cod = p.codigoOsinergmin;

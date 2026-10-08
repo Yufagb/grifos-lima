@@ -52,7 +52,7 @@ pagas en Repsol (S/ 21.49) con tu convenio.
 
 ## Archivos
 
-- `data/data.js` — los 222 grifos COESTI/Primax, Repsol y AVA de Lima Metropolitana y Callao,
+- `data/data.js` — todos los grifos de Lima Metropolitana y Callao (cadenas e independientes),
   con **coordenadas oficiales de Osinergmin** y los tres productos (Regular, Premium, Diesel B5 S-50).
 - `data/premium-lima-callao.csv` — tabla final: precio de lista, descuento, precio final,
   coordenadas y código Osinergmin de cada grifo.
@@ -96,12 +96,13 @@ desvío ida y vuelta). Etiquetas: *precio más bajo*, *más cerca de B*, desvío
   (Places API New) en *Ajustes* — se guarda solo en tu navegador.
 
 **Mapa** — de lejos cada grifo es un punto de color y solo los resultados muestran precio; desde
-zoom 13 aparecen todos. Evita la pila ilegible de 199 etiquetas en la vista de ciudad.
+zoom 13 aparecen todos. Evita la pila ilegible de cientos de etiquetas en la vista de ciudad.
 En el celular el mapa queda fijo arriba y la lista se desplaza por debajo.
 
-**Cadenas e independientes** — la app trae los **791 grifos** de Lima y Callao. Por defecto muestra
-solo los 222 de cadena (Primax, Repsol, AVA), que operan con control de marca; el chip
-*Independientes* enciende los otros 569.
+**Cadenas e independientes** — la app trae **todos los grifos** de Lima y Callao (unos 795).
+Por defecto muestra solo los de cadena (Primax, Repsol, AVA: unos 220), que operan con control de
+marca; el chip *Independientes* enciende el resto (unos 570). Las cifras cambian a medida que
+Osinergmin da de alta o de baja estaciones.
 
 Un independiente aparece con su **razón social**, que es lo único que Facilito publica para
 identificarlo: ahí están los afiliados a Petroperú y a otras banderas, porque **Facilito no
