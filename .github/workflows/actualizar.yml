@@ -19,19 +19,22 @@ jobs:
   actualizar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0       # historia.js arma la serie de precios desde el historial de git
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Bajar datos de Facilito
         run: node scripts/actualizar.js
 
-      - name: Regenerar CSVs
+      - name: Regenerar CSVs e historia de precios
         run: |
           node scripts/build.js
           node scripts/mymaps.js
+          node scripts/historia.js
 
       - name: Commitear si hubo cambios
         run: |

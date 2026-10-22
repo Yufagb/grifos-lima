@@ -75,6 +75,18 @@ Luego abre `app/index.html` en el navegador (funciona con doble clic, no necesit
 
 En la app:
 
+**¿Lleno o poquito?** — el panel de arriba dice si los precios vienen subiendo, bajando o
+quietos, con la línea de los últimos 30 días y un consejo concreto: llenar hoy si suben
+(más de S/ 0.15 en 7 días), poner solo lo necesario si bajan, carga normal si están quietos.
+Sale de `data/historia.js`, que `scripts/historia.js` arma con el historial de git: cada
+corrida del cron dejó una foto de precios, y eso es la serie de tiempo. Es un **índice
+encadenado** (cada día mide el cambio de los mismos grifos que el día anterior), así no
+salta cuando entran grifos nuevos ni cuando una foto viene incompleta. Cada tarjeta muestra
+además cuánto cambió ese grifo en 7 días. No predice nada: muestra hacia dónde vienen.
+
+**Se instala como app** — al agregarla a la pantalla de inicio queda con ícono y nombre
+propios, y recuerda tus elecciones (combustible, marcas, descuentos, galones, radio).
+
 **Arriba, siempre a mano:** combustible (Premium / Regular / Diesel), marcas y **↻ Actualizar**,
 que consulta Facilito en vivo a través del Worker de Cloudflare.
 

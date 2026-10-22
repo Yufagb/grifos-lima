@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f26722">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Grifos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Grifos Lima y Callao — precios con tus descuentos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f26722'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3ES/%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -116,6 +123,28 @@
   details.ajustes .cuerpo{padding:0 12px 12px}
   details.ajustes fieldset{margin-top:4px}
 
+  /* Panel "Hoy": ¿lleno o poquito? Subir es malo para quien compra: rojo; bajar, verde. */
+  :root{--sube:#c0392b;--baja:#0f8a4a;--quieto:#5d6673}
+  @media (prefers-color-scheme: dark){:root{--sube:#ef6a5c;--baja:#35c07a;--quieto:#9aa4b2}}
+  .hoy{border-radius:12px;padding:12px 12px 8px;margin-bottom:12px;border:1px solid var(--line);background:var(--bg)}
+  .hoy .fila{display:flex;align-items:center;gap:10px}
+  .hoy .flecha{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:20px;font-weight:800;background:var(--quieto)}
+  .hoy.sube .flecha{background:var(--sube)} .hoy.baja .flecha{background:var(--baja)}
+  .hoy .veredicto{font-weight:700;font-size:15px;line-height:1.2}
+  .hoy .consejo{font-size:12.5px;margin-top:2px;color:var(--muted)}
+  .hoy .consejo b{color:var(--ink)}
+  .hoy .spark{position:relative;margin-top:10px}
+  .hoy svg{width:100%;height:46px;display:block;overflow:visible}
+  .hoy .spark .fin{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
+    box-shadow:0 0 0 3px var(--bg)}
+  .hoy .cifras{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted);
+    margin-top:2px;font-variant-numeric:tabular-nums}
+  .hoy .aviso{font-size:10.5px;color:var(--muted);margin-top:6px}
+  .tend{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tend.sube{color:var(--sube)} .tend.baja{color:var(--baja)}
+  .ahorro{color:var(--good);font-weight:600}
+
   .leaflet-container{background:var(--bg);font:inherit}
   .pin{position:relative;transform:translate(-50%,-50%);border-radius:999px;color:#fff;font-weight:700;
     font-size:11px;text-align:center;line-height:20px;height:20px;box-shadow:0 1px 4px rgba(0,0,0,.35);
@@ -132,7 +161,8 @@
     html,body{height:auto}
     .app{display:flex;flex-direction:column;height:auto;min-height:100vh}
     main{order:-1;position:sticky;top:0;height:40vh;z-index:900;border-bottom:1px solid var(--line)}
-    .side{overflow:visible;border-right:0;padding:12px}
+    .side{overflow:visible;border-right:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+    .picking{top:calc(10px + env(safe-area-inset-top))}
     .legend{display:none}
     button.mini, .tabs button{min-height:40px}   /* objetivo tactil comodo */
   }
@@ -149,6 +179,8 @@
       <button class="mini" id="btnVivo" title="Consultar Facilito ahora mismo">↻ Actualizar</button>
     </div>
     <p class="hint" id="vivoEstado" hidden style="margin:-4px 0 10px"></p>
+
+    <section class="hoy" id="hoy" hidden aria-live="polite"></section>
 
     <div class="rapida">
       <select id="producto" aria-label="Combustible">
@@ -279,9 +311,16 @@
   // viejos junto a un index.html nuevo (y con otro numero de columnas).
   // El bucket de 10 minutos deja cachear sin quedarse atras.
   (function(){
+    var v = Math.floor(Date.now() / 600000);
     var s = document.createElement('script');
-    s.src = '../data/data.js?v=' + Math.floor(Date.now() / 600000);
-    s.onload = function(){ window.iniciarApp(); };
+    s.src = '../data/data.js?v=' + v;
+    // la historia es opcional: sin ella la app funciona, solo no muestra la tendencia
+    s.onload = function(){
+      var h = document.createElement('script');
+      h.src = '../data/historia.js?v=' + v;
+      h.onload = h.onerror = function(){ window.iniciarApp(); };
+      document.head.appendChild(h);
+    };
     s.onerror = function(){
       document.getElementById('lista').innerHTML =
         '<p class="err">No pude cargar los precios. Revisa tu conexión y recarga.</p>';
@@ -338,6 +377,109 @@ window.iniciarApp = function(){
     var med = medianaMercado(), p = lista(e);
     return med != null && p != null && p < med * UMBRAL;
   };
+
+  // ---------------- tendencia: ¿lleno o poquito? ----------------
+  // HISTORIA sale del historial de git (scripts/historia.js): un indice diario de
+  // grifos de cadena por producto, y el precio de cada grifo hace ~7 dias.
+  var H = window.HISTORIA || null;
+  var IDX_H = {7:0, 8:1, 9:2};
+  var MOVIMIENTO = 0.15;   // S/ por galon en 7 dias para hablar de subida o bajada
+  var signo = function(x){ return (x > 0 ? '+' : x < 0 ? '−' : '±') + Math.abs(x).toFixed(2); };
+
+  function tendenciaMercado(){
+    if (!H || !H.indice || !H.indice[col()]) return null;
+    var s = H.indice[col()], n = s.length, L = s[n - 1];
+    var atras = function(d){ return s[Math.max(0, n - 1 - d)]; };
+    // ultimo salto: el dia mas reciente con un cambio de mas de 5 centimos
+    var salto = null;
+    for (var i = n - 1; i > 0; i--) {
+      if (Math.abs(s[i] - s[i-1]) > 0.05) { salto = {dias: n - 1 - i, monto: s[i] - s[i-1]}; break; }
+    }
+    return {serie: s.slice(-31), hoy: L, d7: L - atras(7), d30: L - atras(30), dias: Math.min(30, n - 1), salto: salto};
+  }
+
+  function sparkline(serie, color){
+    var min = Math.min.apply(null, serie), max = Math.max.apply(null, serie), r = (max - min) || 1;
+    var pts = serie.map(function(v, i){
+      return (i / (serie.length - 1) * 100).toFixed(2) + ',' + (38 - (v - min) / r * 34).toFixed(2);
+    });
+    var ult = pts[pts.length - 1].split(',');
+    // el punto final va fuera del SVG: con preserveAspectRatio="none" un circulo se estira en ovalo
+    return '<div class="spark"><svg viewBox="0 0 100 40" preserveAspectRatio="none" role="img" ' +
+      'aria-label="Precio promedio de los ultimos dias">' +
+      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2" ' +
+      'vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>' +
+      '<span class="fin" style="left:' + ult[0] + '%;top:' + (ult[1] / 40 * 100).toFixed(1) + '%;background:' + color + '"></span></div>';
+  }
+
+  function pintarHoy(){
+    var t = tendenciaMercado(), caja = $('hoy');
+    if (!t) { caja.hidden = true; return; }
+    var clase, flecha, veredicto, consejo;
+    if (t.d7 >= MOVIMIENTO) {
+      clase = 'sube'; flecha = '▲'; veredicto = 'Los precios están subiendo';
+      consejo = '<b>Si vas a cargar, llena el tanque hoy.</b> Subieron S/ ' + t.d7.toFixed(2) + ' por galón en 7 días.';
+    } else if (t.d7 <= -MOVIMIENTO) {
+      clase = 'baja'; flecha = '▼'; veredicto = 'Los precios están bajando';
+      consejo = '<b>Pon solo lo necesario.</b> Bajaron S/ ' + Math.abs(t.d7).toFixed(2) + ' en 7 días; puede convenir esperar.';
+    } else {
+      clase = 'quieto'; flecha = '→'; veredicto = 'Precios estables esta semana';
+      consejo = t.d30 >= 0.40
+        ? '<b>Carga normal.</b> Quietos estos días, pero subieron S/ ' + t.d30.toFixed(2) + ' en el mes: nada indica que vayan a bajar.'
+        : t.d30 <= -0.40
+          ? '<b>Carga normal.</b> Quietos estos días, después de bajar S/ ' + Math.abs(t.d30).toFixed(2) + ' en el mes.'
+          : '<b>Carga normal.</b> Sin cambios importantes en el último mes.';
+    }
+    var color = getComputedStyle(document.documentElement).getPropertyValue('--' + clase).trim() || '#888';
+    var salto = t.salto
+      ? 'último salto ' + (t.salto.dias === 0 ? 'hoy' : t.salto.dias === 1 ? 'ayer' : 'hace ' + t.salto.dias + ' días') +
+        ' (' + signo(t.salto.monto) + ')'
+      : 'sin saltos recientes';
+    caja.className = 'hoy ' + clase;
+    caja.innerHTML =
+      '<div class="fila"><div class="flecha" aria-hidden="true">' + flecha + '</div>' +
+      '<div><div class="veredicto">' + veredicto + '</div><div class="consejo">' + consejo + '</div></div></div>' +
+      sparkline(t.serie, color) +
+      '<div class="cifras"><span>hace ' + t.dias + ' días S/ ' + t.serie[0].toFixed(2) + '</span>' +
+      '<span>hoy <b>S/ ' + t.hoy.toFixed(2) + '</b></span></div>' +
+      '<div class="aviso">' + salto.charAt(0).toUpperCase() + salto.slice(1) + '. ' + nombreProducto() +
+      ', precio de lista promedio de grifos de cadena. Muestra hacia dónde vienen los precios; no adivina el futuro.</div>';
+    caja.hidden = false;
+  }
+
+  // flecha de cada grifo contra su propio precio de hace ~7 dias
+  function tendGrifo(e){
+    if (!H || !H.hace7) return '';
+    var antes = H.hace7[e.cod] && H.hace7[e.cod][IDX_H[col()]], p = lista(e);
+    if (antes == null || p == null) return '';
+    var d = p - antes;
+    if (Math.abs(d) < 0.05) return '<span class="tend">= igual que hace 7 días</span>';
+    return '<span class="tend ' + (d > 0 ? 'sube' : 'baja') + '">' + (d > 0 ? '▲ ' : '▼ ') + signo(d) + ' en 7 días</span>';
+  }
+
+  // ---------------- preferencias: que la app recuerde lo que elegiste ----------------
+  var PREFS = ['producto','dC','dR','dA','galC','galR','radio','desvio','orden'];
+  var CHIPS = ['chipC','chipR','chipA','chipI'];
+  function guardarPrefs(){
+    try {
+      var o = {};
+      PREFS.forEach(function(id){ if ($(id)) o[id] = $(id).value; });
+      CHIPS.forEach(function(id){ o[id] = $(id).getAttribute('aria-pressed'); });
+      localStorage.setItem('grifos.prefs', JSON.stringify(o));
+    } catch (e) {}
+  }
+  function cargarPrefs(){
+    try {
+      var o = JSON.parse(localStorage.getItem('grifos.prefs') || '{}');
+      PREFS.forEach(function(id){
+        if (o[id] == null || !$(id)) return;
+        var el = $(id);
+        if (el.tagName === 'SELECT' && !Array.prototype.some.call(el.options, function(op){ return op.value === o[id]; })) return;
+        el.value = o[id];
+      });
+      CHIPS.forEach(function(id){ if (o[id] === 'true' || o[id] === 'false') $(id).setAttribute('aria-pressed', o[id]); });
+    } catch (e) {}
+  }
   var lista = function(e){ return e.precios[col()]; };
   var fin   = function(e){ var p = lista(e); return p == null ? null : +(p - desc(e.m)).toFixed(2); };
   var marcaOn = function(e){ return $(CHIP[e.m]).getAttribute('aria-pressed') === 'true'; };
@@ -428,7 +570,7 @@ window.iniciarApp = function(){
   function popup(e){
     return '<b>'+titulo(e)+'</b><br>'+esc(e.dir)+'<br>'+esc(e.distrito)+(e.distrito?', ':'')+ZONA[e.z]+
       '<br>'+nombreProducto()+' — lista S/ '+lista(e).toFixed(2)+
-      ' &nbsp; <b>con descuento: S/ '+fin(e).toFixed(2)+'</b><br>'+ insignias(e) +
+      ' &nbsp; <b>con descuento: S/ '+fin(e).toFixed(2)+'</b><br>'+ tendGrifo(e) + ' ' + insignias(e) +
       '<small>Código Osinergmin '+e.cod+'</small>'+ enlaces(e);
   }
   function aConjunto(arr){ var o = {}; (arr||[]).forEach(function(i){ o[i] = true; }); return o; }
@@ -757,7 +899,8 @@ window.iniciarApp = function(){
     var div = document.createElement('div');
     div.className = 'card' + (best ? ' best' : '');
     div.innerHTML =
-      '<span class="price">S/ '+fin(e).toFixed(2)+'<small>lista '+lista(e).toFixed(2)+'</small></span>' +
+      '<span class="price">S/ '+fin(e).toFixed(2)+'<small>lista '+lista(e).toFixed(2)+'</small>' +
+      '<small>'+tendGrifo(e)+'</small></span>' +
       '<h3><span class="dot" style="background:'+COLOR[e.m]+'"></span>'+titulo(e)+'</h3>' +
       '<p>'+esc(e.dir)+'</p><p>'+esc(e.distrito)+(e.distrito?', ':'')+ZONA[e.z]+'</p>' +
       insignias(e) + (extra || '') + enlaces(e);
@@ -852,9 +995,17 @@ window.iniciarApp = function(){
           ' km, y el viaje se come la diferencia: te costaría S/ ' +
           (porPrecio[0].total-mejor.total).toFixed(2) + ' más en total.';
       }
-      cont.appendChild(recomendacion(mejor.e, 'Te conviene este', porque,
+      // frente al precio tipico (mediana) de los grifos del radio
+      var finales = cand.map(function(c){ return fin(c.e); }).sort(function(a,b){ return a-b; });
+      var tipico = finales[Math.floor(finales.length / 2)];
+      var ahorro = (tipico - fin(mejor.e)) * gal;
+      var lineaAhorro = ahorro >= 0.5
+        ? '<div class="why"><span class="ahorro">Te ahorras S/ ' + ahorro.toFixed(2) + '</span> frente al precio típico de la zona (S/ ' +
+          tipico.toFixed(2) + ') en ' + gal + ' galones.</div>'
+        : '';
+      cont.appendChild(recomendacion(mejor.e, 'Te conviene este', porque + lineaAhorro,
         '<span class="tag">' + (mejor.dist/1000).toFixed(1) + ' km</span> ' +
-        '<span class="tag">total S/ ' + mejor.total.toFixed(2) + ' por ' + gal + ' gal</span>'));
+        '<span class="tag">total S/ ' + mejor.total.toFixed(2) + ' por ' + gal + ' gal</span> ' + tendGrifo(mejor.e)));
 
       cont.appendChild(nota('<b>' + cand.length + '</b> grifos a menos de ' + (radio/1000) + ' km, por ' +
         (orden==='total' ? 'costo total (precio + viaje ida y vuelta)' : orden==='precio' ? 'precio' : 'distancia') + '.'));
@@ -1106,7 +1257,7 @@ window.iniciarApp = function(){
   ['chipC','chipR','chipA','chipI'].forEach(function(id){
     $(id).onclick = function(){
       this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true' ? 'false' : 'true');
-      sincronizarRango(true); rankingGeneral();
+      guardarPrefs(); sincronizarRango(true); rankingGeneral();
     };
   });
   ['dC','dR','dA'].forEach(function(id){
@@ -1129,10 +1280,16 @@ window.iniciarApp = function(){
     sincronizarRango(false); rankingGeneral();
   };
   $('btnReset').onclick = function(){ sincronizarRango(true); rankingGeneral(); };
-  $('producto').onchange = function(){ sincronizarRango(true); rankingGeneral(); };
+  $('producto').onchange = function(){ sincronizarRango(true); rankingGeneral(); pintarHoy(); };
 
+  // cualquier cambio en un control se recuerda para la proxima visita
+  document.addEventListener('change', guardarPrefs);
+  document.addEventListener('input', function(ev){ if (PREFS.indexOf(ev.target.id) >= 0) guardarPrefs(); });
+
+  cargarPrefs();
   sincronizarRango(true);
   rankingGeneral();
+  pintarHoy();
 };
 </script>
 </body>
