@@ -71,8 +71,10 @@ function extraer(html) {
 }
 
 // La fuente escapa las comillas para el literal JS ("MZ. \'D\'"); las devolvemos a normal.
+// Facilito tambien entrega el apostrofo tipografico como "¿" ("APOLLO¿S MARKET").
 function limpiar(s) {
-  return String(s).replace(/\\(['"])/g, '$1').replace(/\s+/g, ' ').trim();
+  return String(s).replace(/\\(['"])/g, '$1').replace(/(\p{L})¿(\p{L})/gu, "$1'$2")
+    .replace(/\s+/g, ' ').trim();
 }
 
 function precio(p, re) {

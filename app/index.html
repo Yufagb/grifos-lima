@@ -764,10 +764,11 @@ window.iniciarApp = function(){
     activar(div, e);
     return div;
   }
-  function recomendacion(e, titulo, porque, extra){
+  // ojo: el parametro no puede llamarse "titulo", taparia la funcion titulo(e)
+  function recomendacion(e, encabezado, porque, extra){
     var div = document.createElement('div');
     div.className = 'reco';
-    div.innerHTML = '<div class="kicker">'+titulo+'</div>' +
+    div.innerHTML = '<div class="kicker">'+encabezado+'</div>' +
       '<h2>'+titulo(e)+' — S/ '+fin(e).toFixed(2)+'/gal</h2>' +
       '<p style="font-size:11px">'+nombreProducto()+'</p>' +
       '<p>'+esc(e.dir)+' · '+esc(e.distrito)+'</p>' +
